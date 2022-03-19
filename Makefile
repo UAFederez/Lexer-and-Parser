@@ -4,6 +4,7 @@ SRC = src/main.c            \
 	  src/AST_Expression.c  \
 	  src/AST_Declaration.c \
 	  src/AST_Statement.c   \
+	  src/GraphvizOutput.c
 
 CC  = clang
 CF  = -Wall -Wextra -Wpedantic -D_CRT_SECURE_NO_WARNINGS -g

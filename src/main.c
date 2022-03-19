@@ -8,6 +8,7 @@
 #include "AST_Expression.h"
 #include "AST_Declaration.h"
 #include "AST_Statement.h"
+#include "GraphvizOutput.h"
 
 char* load_program_source(const char* path, size_t* source_len)
 {
@@ -142,6 +143,12 @@ int main()
     } else {
         printf("Parser successful!\n");
         printf("\n\n");
+
+        GraphvizState gv;
+        gv.curr_node_id = 0;
+        gv.root    = decl;
+        gv.out     = stdout;
+        print_graph(&gv);
     }
     deallocate_tokens(&lexer_state);
     free(source_string);

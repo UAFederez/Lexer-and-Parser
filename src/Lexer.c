@@ -105,7 +105,7 @@ size_t maybe_parse_identifier (LexerState* state )
     state->lexeme_str[ident_len] = 0;
 
     enum TokenType type = TOKEN_IDENTIFIER;
-    for (int i = 0; i < 3; ++i) 
+    for (int i = 0; i < 4; ++i) 
     {
         if(strcmp(state->lexeme_str, KEYWORDS[i]) == 0)
         {

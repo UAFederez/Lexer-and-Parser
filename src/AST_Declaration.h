@@ -26,12 +26,14 @@ typedef struct {
     AST_Parameter *params;
 } AST_DeclType;
 
-typedef struct
+typedef struct AST_DECL
 {
     char*  name;
     AST_DeclType type_info;
     AST_Expression *expr;
+
     struct AST_STMT* body;
+    struct AST_DECL* next;
 } AST_Declaration;
 
 bool   parse_ident_type_pair(ParserState*, Token**, data_t*);

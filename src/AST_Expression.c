@@ -97,11 +97,12 @@ AST_Expression* parse_expression(ParserState* parser, size_t min_prec)
         expr_t type = EXPR_ADD;
         switch(curr_op.op)
         {
-            case TOKEN_OP_PLUS  : type = EXPR_ADD    ; break ;
-            case TOKEN_OP_MINUS : type = EXPR_SUB    ; break ;
-            case TOKEN_OP_MUL   : type = EXPR_MUL    ; break ;
-            case TOKEN_OP_DIV   : type = EXPR_DIV    ; break ;
-            case TOKEN_OP_EQU   : type = EXPR_ASSIGN ; break ;
+            case TOKEN_OP_PLUS   : type = EXPR_ADD       ; break ;
+            case TOKEN_OP_MINUS  : type = EXPR_SUB       ; break ;
+            case TOKEN_OP_MUL    : type = EXPR_MUL       ; break ;
+            case TOKEN_OP_DIV    : type = EXPR_DIV       ; break ;
+            case TOKEN_OP_EQU    : type = EXPR_ASSIGN    ; break ;
+            case TOKEN_COMP_LESS : type = EXPR_COMP_LESS ; break ;
             default: break;
         }
         AST_Expression* rhs = parse_expression(parser, next_min_prec);
