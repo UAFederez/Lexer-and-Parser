@@ -1,0 +1,7 @@
+*.exe
+*.ilk
+*.pdb
+*.swp
+
+*.lang
+.vscode/
