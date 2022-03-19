@@ -1,5 +1,5 @@
 # Lexer and Parser
-## Sample Input
+## Sample Source Input
 ```
 func fibonacci(x: int) -> int {
     if x < 2 {
@@ -9,5 +9,5 @@ func fibonacci(x: int) -> int {
     }
 }
 ```
-## AST Drawn using Graphviz
+## Syntax Tree Generated For Graphviz
 <p align="center"><img src="ast_output.png"></p>
