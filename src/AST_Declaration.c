@@ -80,16 +80,18 @@ AST_Declaration* parse_function_decl(ParserState* parser)
     parse_status_t stat = PARSE_SUCCESS;
     data_t return_type  = get_decl_type(parser, &stat);
 
-    // TODO: for now, forward declarations of functions or lone prototypes are
-    // not yet permitted
-    AST_Statement* body = parse_block(parser, true);
-
     if (stat != PARSE_SUCCESS)
     {
         parser->status     = PARSE_ERR_INVALID_TYPE;
         parser->curr_token = func_id;   // valid token to get line number from
         return NULL;
     }
+    get_next_token(parser);
+
+    // TODO: for now, forward declarations of functions or lone prototypes are
+    // not yet permitted
+    AST_Statement* body = parse_block(parser, true);
+
     return create_func_decl(func_id->lexeme, return_type, params, body);
 }
 

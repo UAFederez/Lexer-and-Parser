@@ -37,16 +37,17 @@ void print_expr(AST_Expression* expr, size_t indent)
             printf("  ");
         switch (expr->type)
         {
-            case EXPR_ADD   : printf("+\n")                    ; break ;
-            case EXPR_SUB   : printf("-\n")                    ; break ;
-            case EXPR_MUL   : printf("*\n")                    ; break ;
-            case EXPR_DIV   : printf("/\n")                    ; break ;
-            case EXPR_IDENT : printf("%s\n", expr->ident_name) ; break ;
-            case EXPR_INT   : printf("%ld\n", expr->int_value) ; break ;
-            case EXPR_FLOAT : printf("%f\n", expr->flt_value)  ; break ;
-            case EXPR_CALL  : printf("call\n")                 ; break ;
-            case EXPR_ARG   : printf("arg\n")                  ; break ;
-            case EXPR_NEG   : printf("neg\n")                  ; break ;
+            case EXPR_ADD    : printf("+\n")                    ; break ;
+            case EXPR_SUB    : printf("-\n")                    ; break ;
+            case EXPR_MUL    : printf("*\n")                    ; break ;
+            case EXPR_DIV    : printf("/\n")                    ; break ;
+            case EXPR_ASSIGN : printf("=\n")                    ; break ;
+            case EXPR_IDENT  : printf("%s\n", expr->ident_name) ; break ;
+            case EXPR_INT    : printf("%ld\n", expr->int_value) ; break ;
+            case EXPR_FLOAT  : printf("%f\n", expr->flt_value)  ; break ;
+            case EXPR_CALL   : printf("call\n")                 ; break ;
+            case EXPR_ARG    : printf("arg\n")                  ; break ;
+            case EXPR_NEG    : printf("neg\n")                  ; break ;
             default: break;
         }
         print_expr(expr->lhs, indent + 1);
@@ -105,13 +106,13 @@ int main()
     if(tokenize_string(&lexer_state) != LEX_SUCCESS)
         return 0;
 
-    print_tokens(lexer_state.tokens);
+    //print_tokens(lexer_state.tokens);
     ParserState parser;
     parser.status       = PARSE_SUCCESS;
     parser.token_stream = lexer_state.tokens;
     parser.curr_token   = lexer_state.tokens;
 
-    AST_Statement *stmt = parse_statement(&parser);
+    AST_Declaration *decl = parse_declaration(&parser);
     //AST_Expression* expr = parse_expression(&parser, 0);
     //print_expr(expr, 0);
 
@@ -138,9 +139,10 @@ int main()
                 break;
             default: break;
         }
+    } else {
+        printf("Parser successful!\n");
+        printf("\n\n");
     }
-    printf("Parser successful!\n");
-    printf("\n\n");
     deallocate_tokens(&lexer_state);
     free(source_string);
     return 0;

@@ -6,12 +6,30 @@ AST_Statement* parse_statement(ParserState* parser)
     AST_Statement* stmt = NULL;
     if (match_token(parser, KEYWORD_IF))
         stmt = parse_if_statement(parser);
+    else if (match_token(parser, KEYWORD_RETURN))
+        stmt = parse_return_statement(parser);
     else
     {
         AST_Expression* expr = parse_expression(parser, 0);
-        stmt = create_statement(STMT_EXPR, expr, NULL, NULL, NULL);
+        if(expr)
+            stmt = create_statement(STMT_EXPR, expr, NULL, NULL, NULL);
+        if (match_token(parser, TOKEN_SEMICOLON))
+            get_next_token(parser);
     }
     return stmt;
+}
+
+AST_Statement* parse_return_statement(ParserState* parser)
+{
+    get_next_token(parser); // consume return;
+    AST_Expression* expr = parse_expression(parser, 0);
+    if (expr == NULL)
+    {
+        // TODO: emit_error (...)
+    }
+    if (match_token(parser, TOKEN_SEMICOLON))
+        get_next_token(parser);
+    return create_statement(STMT_RETURN, expr, NULL, NULL, NULL);
 }
 
 AST_Statement* parse_if_statement(ParserState* parser)
@@ -26,7 +44,6 @@ AST_Statement* parse_if_statement(ParserState* parser)
     }
     AST_Statement *body     = parse_block(parser, false);
     AST_Statement *else_blk = NULL;
-    printf("block done!\n");
 
     if (match_token(parser, KEYWORD_ELSE))
     {

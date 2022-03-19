@@ -97,10 +97,11 @@ AST_Expression* parse_expression(ParserState* parser, size_t min_prec)
         expr_t type = EXPR_ADD;
         switch(curr_op.op)
         {
-            case TOKEN_OP_PLUS  : type = EXPR_ADD; break;
-            case TOKEN_OP_MINUS : type = EXPR_SUB; break;
-            case TOKEN_OP_MUL   : type = EXPR_MUL; break;
-            case TOKEN_OP_DIV   : type = EXPR_DIV; break;
+            case TOKEN_OP_PLUS  : type = EXPR_ADD    ; break ;
+            case TOKEN_OP_MINUS : type = EXPR_SUB    ; break ;
+            case TOKEN_OP_MUL   : type = EXPR_MUL    ; break ;
+            case TOKEN_OP_DIV   : type = EXPR_DIV    ; break ;
+            case TOKEN_OP_EQU   : type = EXPR_ASSIGN ; break ;
             default: break;
         }
         AST_Expression* rhs = parse_expression(parser, next_min_prec);
@@ -158,16 +159,17 @@ AST_Expression* maybe_parse_call(ParserState* parser)
 bool check_if_binary_op(ParserState* parser, Operator_Info* op_info)
 {
     static const Operator_Info info[] = { 
-        { TOKEN_OP_PLUS   , 0 , true } , { TOKEN_OP_MINUS     , 0 , true } ,
-        { TOKEN_OP_DIV    , 1 , true } , { TOKEN_OP_MUL       , 1 , true } ,
-        { TOKEN_COMP_LESS , 2 , true } , { TOKEN_COMP_GREATER , 2 , true } ,
-        { TOKEN_COMP_LEQ  , 2 , true } , { TOKEN_COMP_GEQ     , 2 , true } ,
-        { TOKEN_COMP_NEQ  , 3 , true } , { TOKEN_COMP_EQUAL   , 3 , true }
+        { TOKEN_OP_PLUS   , 1 , true } , { TOKEN_OP_MINUS     , 1 , true } ,
+        { TOKEN_OP_DIV    , 2 , true } , { TOKEN_OP_MUL       , 2 , true } ,
+        { TOKEN_COMP_LESS , 3 , true } , { TOKEN_COMP_GREATER , 3 , true } ,
+        { TOKEN_COMP_LEQ  , 3 , true } , { TOKEN_COMP_GEQ     , 3 , true } ,
+        { TOKEN_COMP_NEQ  , 4 , true } , { TOKEN_COMP_EQUAL   , 4 , true } ,
+        { TOKEN_OP_EQU    , 0 , false} ,
     };
     
     if (parser->curr_token != NULL)
     {
-        for (size_t i = 0; i < 10; ++i)
+        for (size_t i = 0; i < 11; ++i)
         {
             if (parser->curr_token->type == info[i].op)
             {

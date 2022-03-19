@@ -8,9 +8,9 @@ typedef enum {
 } data_t;
 
 typedef enum { 
-    EXPR_ADD  , EXPR_SUB   , EXPR_MUL , EXPR_DIV   ,
-    EXPR_CALL , EXPR_IDENT , EXPR_INT , EXPR_FLOAT ,
-    EXPR_ARG  , EXPR_NEG
+    EXPR_ADD  , EXPR_SUB   , EXPR_MUL    , EXPR_DIV   ,
+    EXPR_CALL , EXPR_IDENT , EXPR_INT    , EXPR_FLOAT ,
+    EXPR_ARG  , EXPR_NEG   , EXPR_ASSIGN
 } expr_t;
 
 typedef struct AST_EXPR

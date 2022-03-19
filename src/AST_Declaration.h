@@ -11,7 +11,7 @@
 
 // Statements can be declarations
 // but declarations may also contain statements (function call)
-struct AST_STATEMENT;
+struct AST_STMT;
 
 typedef struct AST_DECL_PARAM
 {
@@ -31,7 +31,7 @@ typedef struct
     char*  name;
     AST_DeclType type_info;
     AST_Expression *expr;
-    struct AST_STATEMENT* body;
+    struct AST_STMT* body;
 } AST_Declaration;
 
 bool   parse_ident_type_pair(ParserState*, Token**, data_t*);
@@ -42,7 +42,7 @@ AST_Declaration* parse_function_decl ( ParserState*);
 AST_Declaration* parse_variable_decl ( ParserState*);
 AST_Parameter  * create_param_node   ( char*, data_t);
 AST_Declaration* create_ident_decl   ( char*, data_t, AST_Expression*);
-AST_Declaration* create_func_decl    ( char*, data_t, AST_Parameter*, struct AST_STATEMENT*);
+AST_Declaration* create_func_decl    ( char*, data_t, AST_Parameter*, struct AST_STMT*);
 
 // TODO: deallocation functions
 
