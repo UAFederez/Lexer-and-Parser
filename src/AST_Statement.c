@@ -7,10 +7,7 @@ AST_Statement* parse_statement(ParserState* parser)
     if (match_token(parser, KEYWORD_IF))
         stmt = parse_if_statement(parser);
     else if (match_token(parser, KEYWORD_RETURN))
-    {
-        printf("RETURN STATEMENT!\n");
         stmt = parse_return_statement(parser);
-    }
     else
     {
         AST_Expression* expr = parse_expression(parser, 0);

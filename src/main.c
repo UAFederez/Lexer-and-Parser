@@ -9,11 +9,11 @@
 #include "AST_Declaration.h"
 #include "AST_Statement.h"
 #include "GraphvizOutput.h"
+#include "hash_table.h"
 
 char* load_program_source(const char* path, size_t* source_len)
 {
-    FILE* input_file = NULL;
-    fopen_s(&input_file, path, "rb");
+    FILE* input_file = fopen(path, "rb");
 
     if(!input_file)
         return NULL;
@@ -93,7 +93,7 @@ int main()
         return -1;
     }
     //printf("Contents (%lld):\n\"%s\"", source_len, source_string);
-    
+
     if(source_len == 0) 
     {
         printf("File is empty. No need to do anything...");
@@ -142,13 +142,15 @@ int main()
         }
     } else {
         printf("Parser successful!\n");
-        printf("\n\n");
 
+        FILE* output_file = fopen("ast_output.gv", "w");
         GraphvizState gv;
         gv.curr_node_id = 0;
         gv.root    = decl;
-        gv.out     = stdout;
+        gv.out     = output_file;
+        printf("Saving to dot file \'ast_output.gv\'...");
         print_graph(&gv);
+        printf("Done!\n");
     }
     deallocate_tokens(&lexer_state);
     free(source_string);

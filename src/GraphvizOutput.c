@@ -4,6 +4,7 @@
 
 const char* TYPE_STR[] = { "TYPE_INT", "TYPE_FLOAT", "TYPE_FUNCTION", "TYPE_VOID" };
 const char* STMT_TYPE_STR[] = { "STMT_EXPR", "STMT_DECL", "STMT_IF", "STMT_FOR", "STMT_RETURN" };
+
 const char* NAME_FMT   = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
 const char* ENUM_FMT   = "    enum_%d[label=\"{%s}\"];\n";
 const char* DECL_FMT   = "    decl_%d[label=\"{AST_Declaration | {<f1>name |<f2> type_info|<f3> expr|<f4> body|<f5>next}}\"];\n";
@@ -12,7 +13,7 @@ const char* PARAM_FMT  = "    param_%d[label=\"{AST_Parameter|{<f1>name|<f2>type
 const char* EXPR_FMT   = "    expr_%d[label=\"{%s|{<f1>lhs|<f2>rhs}}\"];\n";
 const char* EXPR_FMT_I = "    expr_%d[label=\"{%ld|{<f1>lhs|<f2>rhs}}\"];\n";
 const char* EXPR_FMT_F = "    expr_%d[label=\"{%d|{<f1>lhs|<f2>rhs}}\"];\n";
-const char* STMT_FMT   = "    stmt_%d[label=\"{AST_Statement|{<f1>type|<f2>expr|<f3>decl|<f4>body|<f5>else_blk}}\"];\n";
+const char* STMT_FMT   = "    stmt_%d[label=\"{AST_Statement|{<f1>type|<f2>expr|<f3>decl|<f4>body|<f5>else_blk|<f6>next}}\"];\n";
 
 void print_graph(GraphvizState* gv)
 {
@@ -64,12 +65,14 @@ int output_statement(AST_Statement* stmt, GraphvizState* gv)
         int decl_id = output_decl_graph(stmt->decl, gv);
         int body_id = output_statement(stmt->body, gv);
         int else_id = output_statement(stmt->else_blk, gv);
+        int next_id = output_statement(stmt->next, gv);
         
         fprintf(gv->out, "    stmt_%d:<f1> -> enum_%d;\n", stmt_id, type_id);
         if(expr_id != -1) fprintf(gv->out, "    stmt_%d:<f2> -> expr_%d;\n", stmt_id, expr_id);
         if(decl_id != -1) fprintf(gv->out, "    stmt_%d:<f3> -> decl_%d;\n", stmt_id, decl_id);
         if(body_id != -1) fprintf(gv->out, "    stmt_%d:<f4> -> stmt_%d;\n", stmt_id, body_id);
         if(else_id != -1) fprintf(gv->out, "    stmt_%d:<f5> -> stmt_%d;\n", stmt_id, else_id);
+        if(next_id != -1) fprintf(gv->out, "    stmt_%d:<f6> -> stmt_%d;\n", stmt_id, next_id);
         return stmt_id;
     }
     return -1;

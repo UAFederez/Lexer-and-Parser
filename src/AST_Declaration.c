@@ -91,7 +91,6 @@ AST_Declaration* parse_function_decl(ParserState* parser)
     // TODO: for now, forward declarations of functions or lone prototypes are
     // not yet permitted
     AST_Statement* body = parse_block(parser, true);
-
     return create_func_decl(func_id->lexeme, return_type, params, body);
 }
 
@@ -204,7 +203,8 @@ data_t get_decl_type(ParserState* parser, parse_status_t* status)
 AST_Declaration* create_func_decl(char* name, data_t return_type, AST_Parameter* params, AST_Statement* stmts)
 {
     AST_Declaration* func = (AST_Declaration*) malloc(sizeof(AST_Declaration));
-    func->expr   = NULL;
+    func->expr = NULL;
+    func->next = NULL;
 
     func->type_info.params      = params;
     func->type_info.type        = TYPE_FUNCTION;
@@ -212,7 +212,7 @@ AST_Declaration* create_func_decl(char* name, data_t return_type, AST_Parameter*
     func->body = stmts;
 
     size_t name_len = strlen(name);
-    func->name = malloc(name_len);
+    func->name = malloc(name_len + 1);
     func->name[name_len] = '\0';
     strncpy(func->name, name, name_len);
 
@@ -223,13 +223,14 @@ AST_Declaration* create_ident_decl(char* ident_name, data_t type, AST_Expression
 {
     AST_Declaration* decl = (AST_Declaration*) malloc(sizeof(AST_Declaration));
 
+    decl->next = NULL;
     decl->expr = expr;
     decl->type_info.type = type;
     decl->type_info.params = NULL;
     decl->type_info.return_type = TYPE_VOID;
 
     size_t ident_len = strlen(ident_name);
-    decl->name = malloc(ident_len);
+    decl->name = malloc(ident_len + 1);
     decl->name[ident_len] = '\0';
     strncpy(decl->name, ident_name, ident_len);
 
@@ -243,7 +244,7 @@ AST_Parameter* create_param_node(char* name, data_t type)
     param->type = type;
 
     size_t name_len = strlen(name);
-    param->name = malloc(name_len);
+    param->name = malloc(name_len + 1);
     param->name[name_len] = '\0';
     strncpy(param->name, name, name_len);
 

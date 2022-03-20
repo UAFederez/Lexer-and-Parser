@@ -53,14 +53,15 @@ typedef struct {
 
     char   curr_char;
     size_t curr_ch_idx;
-    size_t max_lexeme_len;
-    char*  lexeme_str;
+
+    char*  lexeme_buffer;
+    size_t lexeme_buffer_size;
 } LexerState;
 
 void read_next_char   (LexerState*);
 void deallocate_tokens(LexerState*);
 
-char * check_if_realloc       ( char* str, size_t capacity, size_t size);
+char * check_if_realloc       ( char* str, size_t* capacity, size_t size);
 void   insert_token           ( char*, enum TokenType, LexerState* );
 Token* do_insert_token        ( char*, enum TokenType, Token*, size_t, size_t, size_t );
 void   preprocess_string      ( char*, size_t);

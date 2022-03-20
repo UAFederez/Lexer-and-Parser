@@ -9,14 +9,14 @@
 
 size_t tokenize_string(LexerState* state)
 {
-    state->curr_ch_idx    = 0;
-    state->max_lexeme_len = 0;
-    state->lexeme_str     = 0;
-    state->num_tokens     = 0;
+    state->curr_ch_idx        = 0;
+    state->lexeme_buffer_size = 0;
+    state->lexeme_buffer      = 0;
+    state->num_tokens         = 0;
 
-    state->line_start_idx   = 0;
-    state->curr_line_number = 1;
-    state->curr_pos_in_line = 1;
+    state->line_start_idx     = 0;
+    state->curr_line_number   = 1;
+    state->curr_pos_in_line   = 1;
 
     preprocess_string(state->input_string, state->input_len);
 
@@ -61,12 +61,12 @@ size_t maybe_parse_num_literal(LexerState* state)
     size_t end_idx  = state->curr_ch_idx + 1;
     int num_periods = 0;
 
-    while(end_idx < state->input_len && 
-            (isdigit(state->input_string[end_idx]) || state->input_string[end_idx] == '.'))
+    char char_at_end = state->input_string[end_idx];
+    while(end_idx < state->input_len && (isdigit(char_at_end) || char_at_end == '.'))
     {
         if(state->input_string[end_idx] == '.')
             num_periods++;
-        end_idx++;
+        char_at_end = state->input_string[end_idx++];
     }
 
     if(num_periods > 1)
@@ -75,11 +75,11 @@ size_t maybe_parse_num_literal(LexerState* state)
     size_t num_len      = end_idx - state->curr_ch_idx;
     enum TokenType type = (num_periods == 0 ? TOKEN_INT_LITERAL : TOKEN_FLOAT_LITERAL);
 
-    state->lexeme_str = check_if_realloc(state->lexeme_str, state->max_lexeme_len, num_len);
-    state->lexeme_str[num_len] = '\0';
-    strncpy(state->lexeme_str, state->input_string + state->curr_ch_idx, num_len);
+    state->lexeme_buffer = check_if_realloc(state->lexeme_buffer, &state->lexeme_buffer_size, num_len + 1);
+    state->lexeme_buffer[num_len] = '\0';
+    strncpy(state->lexeme_buffer, state->input_string + state->curr_ch_idx, num_len);
 
-    insert_token(state->lexeme_str, type, state);
+    insert_token(state->lexeme_buffer, type, state);
     state->curr_ch_idx = end_idx;
 
     return 1;
@@ -99,28 +99,22 @@ size_t maybe_parse_identifier (LexerState* state )
     }
     
     size_t ident_len  = end_idx - state->curr_ch_idx;
-    state->lexeme_str = check_if_realloc(state->lexeme_str, state->max_lexeme_len, ident_len);
-    state->lexeme_str[ident_len] = 0;
-    strncpy(state->lexeme_str, (state->input_string + state->curr_ch_idx), ident_len);
-    state->lexeme_str[ident_len] = 0;
+    state->lexeme_buffer = check_if_realloc(state->lexeme_buffer, &state->lexeme_buffer_size, ident_len + 1);
+    strncpy(state->lexeme_buffer, (state->input_string + state->curr_ch_idx), ident_len);
+    state->lexeme_buffer[ident_len] = 0;
 
     enum TokenType type = TOKEN_IDENTIFIER;
     for (int i = 0; i < 4; ++i) 
     {
-        if(strcmp(state->lexeme_str, KEYWORDS[i]) == 0)
+        if(strcmp(state->lexeme_buffer, KEYWORDS[i]) == 0)
         {
             type = KEYWORD_IF + i;
             break;
         }
     }
 
-    insert_token(state->lexeme_str, type, state);
+    insert_token(state->lexeme_buffer, type, state);
     state->curr_ch_idx += ident_len;
-
-    // Reset the lexeme string buffer to be reused
-    memset(state->lexeme_str, 0, ident_len);
-    if(ident_len < state->max_lexeme_len)
-        state->max_lexeme_len = ident_len;
 
     state->num_tokens++;
     return 1;
@@ -164,7 +158,7 @@ Token* do_insert_token(char* lexeme, enum TokenType type, Token* token_stream, s
             default:
             {
                 size_t len = strlen(lexeme);
-                new_token->lexeme = (char*) malloc(len);
+                new_token->lexeme = (char*) malloc(len + 1);
                 new_token->lexeme[len] = 0;
                 strncpy(new_token->lexeme, lexeme, len);
             }
@@ -255,9 +249,15 @@ void preprocess_string(char* input_string, size_t input_len)
     }
 }
 
-char* check_if_realloc(char* str, size_t capacity, size_t size)
+char* check_if_realloc(char* str, size_t* capacity, size_t size)
 {
-    if(size >= capacity)
-        return (char*) realloc(str, capacity + size);
+    if (*capacity < size)
+    {
+        char* new_str = (char*) malloc(size + 1);
+        *capacity     = size;
+
+        if (str != NULL) free(str);
+        return new_str;
+    }
     return str;
 }

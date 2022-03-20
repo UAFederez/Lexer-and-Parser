@@ -2,6 +2,10 @@
 *.ilk
 *.pdb
 *.swp
+*.exp
+*.lib
+*.gv
 
 *.lang
 .vscode/
+TODO.md
