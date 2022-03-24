@@ -196,7 +196,7 @@ AST_Expression* create_expr_ident(const char* str, AST_Expression* lhs, AST_Expr
     AST_Expression* expr = create_expr(EXPR_IDENT, lhs, rhs);
 
     size_t str_len   = strlen(str);
-    expr->ident_name = malloc(str_len + 1);
+    expr->ident_name = (char*) malloc(str_len + 1);
     expr->ident_name[str_len] = '\0';
     strncpy(expr->ident_name, str, str_len);
 

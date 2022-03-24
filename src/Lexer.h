@@ -22,7 +22,8 @@ enum TokenType {
     TOKEN_EOF        ,
 };
 
-typedef struct TOKEN {
+struct Token 
+{
     enum   TokenType type;
     char*  lexeme;
     long   int_value;
@@ -32,9 +33,9 @@ typedef struct TOKEN {
     size_t pos_in_line;
     size_t line_start_idx;
 
-    struct TOKEN* next;
-    struct TOKEN* prev;
-} Token;
+    Token* next;
+    Token* prev;
+};
 
 struct OperatorInfo {
     char* op;
@@ -42,7 +43,8 @@ struct OperatorInfo {
     bool  is_left_assoc;
 };
 
-typedef struct {
+struct LexerState 
+{
     char*  input_string;
     size_t input_len;
     size_t num_tokens;
@@ -57,17 +59,18 @@ typedef struct {
 
     char*  lexeme_buffer;
     size_t lexeme_buffer_size;
-} LexerState;
 
-void read_next_char   (LexerState*);
-void deallocate_tokens(LexerState*);
+    size_t tokenize_string();
+    size_t maybe_parse_identifier();
+    size_t maybe_parse_num_literal();
+    size_t maybe_parse_operators();
+
+    void   insert_token(const char*, enum TokenType);
+    Token* do_insert_token(const char*, enum TokenType, Token*, size_t, size_t, size_t);
+};
 
 char * check_if_realloc       ( char* str, size_t* capacity, size_t size);
 void   insert_token           ( char*, enum TokenType, LexerState* );
 Token* do_insert_token        ( char*, enum TokenType, Token*, size_t, size_t, size_t );
 void   preprocess_string      ( char*, size_t);
-size_t tokenize_string        ( LexerState* );
-size_t maybe_parse_identifier ( LexerState* );
-size_t maybe_parse_num_literal( LexerState* );
-size_t maybe_parse_operators  ( LexerState* );
 #endif

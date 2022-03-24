@@ -91,6 +91,7 @@ AST_Declaration* parse_function_decl(ParserState* parser)
     // TODO: for now, forward declarations of functions or lone prototypes are
     // not yet permitted
     AST_Statement* body = parse_block(parser, true);
+    if (body == NULL) printf("No body!\n");
     return create_func_decl(func_id->lexeme, return_type, params, body);
 }
 
@@ -189,7 +190,7 @@ data_t get_decl_type(ParserState* parser, parse_status_t* status)
     {
         if (strcmp(parser->curr_token->lexeme, PRIMITIVE_TYPE_NAMES[i]) == 0)
         {
-            type = TYPE_INT + i;
+            type = static_cast<data_t>(TYPE_INT + i);
             has_matched_type = true;
         }
     }
@@ -212,7 +213,7 @@ AST_Declaration* create_func_decl(char* name, data_t return_type, AST_Parameter*
     func->body = stmts;
 
     size_t name_len = strlen(name);
-    func->name = malloc(name_len + 1);
+    func->name = (char*) malloc(name_len + 1);
     func->name[name_len] = '\0';
     strncpy(func->name, name, name_len);
 
@@ -230,7 +231,7 @@ AST_Declaration* create_ident_decl(char* ident_name, data_t type, AST_Expression
     decl->type_info.return_type = TYPE_VOID;
 
     size_t ident_len = strlen(ident_name);
-    decl->name = malloc(ident_len + 1);
+    decl->name = (char*) malloc(ident_len + 1);
     decl->name[ident_len] = '\0';
     strncpy(decl->name, ident_name, ident_len);
 
@@ -244,7 +245,7 @@ AST_Parameter* create_param_node(char* name, data_t type)
     param->type = type;
 
     size_t name_len = strlen(name);
-    param->name = malloc(name_len + 1);
+    param->name = (char*) malloc(name_len + 1);
     param->name[name_len] = '\0';
     strncpy(param->name, name, name_len);
 

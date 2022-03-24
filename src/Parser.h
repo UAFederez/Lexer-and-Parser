@@ -21,27 +21,27 @@
     If_Statement  -> if Expression \{? Statement+ \}? { else \{? Statement \}? }?
 **/
 
-typedef enum {
+enum error_t {
     ERR_NONE                  , ERR_LEX_UNRECOGNIZED_TOKEN , ERR_PARSE_MALFORMED_EXPR ,
     ERR_PARSE_UNMATCHED_PAREN , ERR_PARSE_INVALID_TYPE     , ERR_PARSE_INVALID_DECL   ,
     ERR_PARSE_INVALID_PARAM   , ERR_PARSE_IF_STMT_NO_BODY  ,
-} error_t;
+};
 
-typedef struct ERR_LIST {
+struct ErrorList {
     error_t type;
     size_t line_number;
     size_t pos_in_line;
     Token* errant_token;
 
-    struct ERR_LIST* next;
-} ErrorList;
+    ErrorList* next;
+};
 
-typedef struct
+struct Operator_Info
 {
-    enum TokenType op;
+    TokenType op;
     size_t precedence;
     bool   is_left_assoc;
-} Operator_Info;
+};
 
 // Note: maybe the better approach is to record the current line number on each
 // get_next_token() and have an emit_err() function, that way there's no need to 
@@ -50,12 +50,13 @@ typedef struct
 // But also, perhaps when the non-terminal parsing fails e.g parse_expression() == NULL
 // then it internally rolls back the curr_token pointer from where it started, idk...
 // Decide on this later on
-typedef enum {
+enum parse_status_t 
+{
     PARSE_SUCCESS          , PARSE_ERR_MALFORMED_EXPR , PARSE_ERR_UNMATCHED_PAREN ,
     PARSE_ERR_INVALID_TYPE , PARSE_ERR_INVALID_DECL   , PARSE_ERR_INVALID_PARAM   ,
-} parse_status_t;
+};
 
-typedef struct
+struct ParserState
 {
     Token* token_stream;
     Token* curr_token;
@@ -64,10 +65,14 @@ typedef struct
     ErrorList *errors;
     size_t curr_line_idx;
     size_t curr_pos_in_line;
-} ParserState;
 
-bool match_token     ( ParserState*, enum TokenType);
-bool get_next_token  ( ParserState*);
+    bool match_token(enum TokenType);
+    bool get_next_token();
+    void emit_error(error_t type);
+};
+
+bool match_token     (ParserState*, enum TokenType);
+bool get_next_token  (ParserState*);
 
 void emit_error(ParserState* parser, error_t type);
 ErrorList* do_append_error(ErrorList*, error_t, Token *, ParserState*);

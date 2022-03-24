@@ -21,7 +21,7 @@ char* load_program_source(const char* path, size_t* source_len)
     size_t input_len  = ftell(input_file);
     fseek(input_file, 0, SEEK_SET);
 
-    char* input_string = malloc(input_len + 1);
+    char* input_string = (char*) malloc(input_len + 1);
     fread(input_string, input_len, 1, input_file);
     input_string[input_len] = '\0';
     
@@ -104,7 +104,7 @@ int main()
     lexer_state.tokens       = NULL;
     lexer_state.input_len    = source_len;
 
-    size_t lex_result = tokenize_string(&lexer_state);
+    size_t lex_result = lexer_state.tokenize_string();
 
     printf("Lexer finished with status: %lld\n", lex_result);
 
@@ -150,7 +150,6 @@ int main()
         print_graph(&gv);
         printf("Done!\n");
     }
-    deallocate_tokens(&lexer_state);
     free(source_string);
     return 0;
 }

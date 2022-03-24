@@ -59,6 +59,7 @@ AST_Statement* parse_block(ParserState* parser, bool require_braces)
 
     if (require_braces && !begins_with_left_cbrack)
         return NULL;
+
     if (begins_with_left_cbrack)
     {
         get_next_token(parser);
@@ -70,13 +71,19 @@ AST_Statement* parse_block(ParserState* parser, bool require_braces)
         {
             AST_Statement* stmt = parse_statement(parser);
             if (stmt == NULL)
-
+            {
+                fprintf(stderr, "No statement!\n");
+                return NULL;
+            }
+                
             if (*curr_stmt == NULL) *curr_stmt = stmt;
             curr_stmt = &((*curr_stmt)->next);
         }
-        printf("Done parsing block!\n");
         if (!match_token(parser, TOKEN_RIGHT_CBRACK))
+        {
+            printf("No matching right bracket!\n");
             return NULL; // @Leak
+        }
         get_next_token(parser);
         return stmts;
     }
