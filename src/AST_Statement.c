@@ -70,6 +70,10 @@ AST_Statement* parse_block(ParserState* parser, bool require_braces)
         {
             AST_Statement* stmt = parse_statement(parser);
             if (stmt == NULL)
+            {
+                printf("No statement!");
+                return NULL;
+            }
 
             if (*curr_stmt == NULL) *curr_stmt = stmt;
             curr_stmt = &((*curr_stmt)->next);
