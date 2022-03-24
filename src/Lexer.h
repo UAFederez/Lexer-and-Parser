@@ -18,7 +18,8 @@ enum TokenType {
     TOKEN_INCREMENT  , TOKEN_DECREMENT    , TOKEN_POWER         , TOKEN_COMP_EQUAL   ,
     TOKEN_COMP_LEQ   , TOKEN_COMP_GEQ     , TOKEN_COMP_NEQ      , TOKEN_ARROW        ,
 
-    KEYWORD_IF       , KEYWORD_ELSE       , KEYWORD_FUNC        , KEYWORD_RETURN
+    KEYWORD_IF       , KEYWORD_ELSE       , KEYWORD_FUNC        , KEYWORD_RETURN     ,
+    TOKEN_EOF        ,
 };
 
 typedef struct TOKEN {

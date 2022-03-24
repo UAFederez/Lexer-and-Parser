@@ -58,10 +58,7 @@ AST_Statement* parse_block(ParserState* parser, bool require_braces)
     bool begins_with_left_cbrack = match_token(parser, TOKEN_LEFT_CBRACK);
 
     if (require_braces && !begins_with_left_cbrack)
-    {
-        printf("Curly brackets needed pls...");
         return NULL;
-    }
     if (begins_with_left_cbrack)
     {
         get_next_token(parser);
@@ -73,16 +70,13 @@ AST_Statement* parse_block(ParserState* parser, bool require_braces)
         {
             AST_Statement* stmt = parse_statement(parser);
             if (stmt == NULL)
-                printf("Invalid statement!\n");
 
             if (*curr_stmt == NULL) *curr_stmt = stmt;
             curr_stmt = &((*curr_stmt)->next);
         }
+        printf("Done parsing block!\n");
         if (!match_token(parser, TOKEN_RIGHT_CBRACK))
-        {
-            printf("Invalid block!\n");
             return NULL; // @Leak
-        }
         get_next_token(parser);
         return stmts;
     }

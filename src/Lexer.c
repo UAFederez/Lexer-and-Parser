@@ -20,6 +20,7 @@ size_t tokenize_string(LexerState* state)
 
     preprocess_string(state->input_string, state->input_len);
 
+    size_t status = LEX_SUCCESS;
     while(state->curr_ch_idx < state->input_len)
     {
         bool read_valid_token = true;
@@ -49,11 +50,13 @@ size_t tokenize_string(LexerState* state)
                 printf("%c", state->input_string[state->line_start_idx - 1]);
             printf("\"\n");
             printf("\n\n");
-            return LEX_ERR_UNKNOWN_TOKEN;
+            status = LEX_ERR_UNKNOWN_TOKEN;
+            break;
         }
         state->curr_ch_idx++;
     }
-    return LEX_SUCCESS;
+    insert_token("EOF", TOKEN_EOF, state);
+    return status;
 }
 
 size_t maybe_parse_num_literal(LexerState* state)

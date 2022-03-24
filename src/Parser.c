@@ -38,7 +38,7 @@ ErrorList* do_append_error(ErrorList* root, error_t type, Token* errant_token, P
 
 bool get_next_token (ParserState* parser)
 {
-    if(parser->curr_token != NULL) 
+    if(parser->curr_token->type != TOKEN_EOF) 
     {
         parser->curr_line_idx = parser->curr_token->line_number;
         parser->curr_token    = parser->curr_token->next;

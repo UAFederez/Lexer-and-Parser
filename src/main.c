@@ -9,7 +9,6 @@
 #include "AST_Declaration.h"
 #include "AST_Statement.h"
 #include "GraphvizOutput.h"
-#include "hash_table.h"
 
 char* load_program_source(const char* path, size_t* source_len)
 {
@@ -68,6 +67,7 @@ void print_tokens(Token* token_stream)
             case TOKEN_FLOAT_LITERAL : printf("[Float ] %f\n",  tok->flt_value)  ; break ;
             case TOKEN_LEFT_PAREN    : printf("[LParen] %s\n",  tok->lexeme)     ; break ;
             case TOKEN_RIGHT_PAREN   : printf("[RParen] %s\n",  tok->lexeme)     ; break ;
+            case TOKEN_EOF           : printf("[EOF   ] %s\n",  tok->lexeme)     ; break ;
 
             case TOKEN_COMP_LESS: case TOKEN_COMP_GREATER:
                 printf("[Comp  ] %s\n", tok->lexeme);
@@ -92,30 +92,28 @@ int main()
         printf("[Error] Could not read input file!\n");
         return -1;
     }
-    //printf("Contents (%lld):\n\"%s\"", source_len, source_string);
 
     if(source_len == 0) 
     {
         printf("File is empty. No need to do anything...");
         return 0;
     }
+
     LexerState lexer_state;
     lexer_state.input_string = source_string;
     lexer_state.tokens       = NULL;
     lexer_state.input_len    = source_len;
 
-    if(tokenize_string(&lexer_state) != LEX_SUCCESS)
-        return 0;
+    size_t lex_result = tokenize_string(&lexer_state);
 
-    //print_tokens(lexer_state.tokens);
+    printf("Lexer finished with status: %lld\n", lex_result);
+
     ParserState parser;
     parser.status       = PARSE_SUCCESS;
     parser.token_stream = lexer_state.tokens;
     parser.curr_token   = lexer_state.tokens;
 
     AST_Declaration *decl = parse_declaration(&parser);
-    //AST_Expression* expr = parse_expression(&parser, 0);
-    //print_expr(expr, 0);
 
     if(parser.status != PARSE_SUCCESS)
     {
