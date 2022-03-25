@@ -2,6 +2,11 @@
 #define LANG_LEXER_H
 
 #include <stdbool.h>
+#include <cstddef>
+#include <cstdlib>
+#include <string>
+#include <array>
+#include <algorithm>
 
 enum LexerError {
     LEX_SUCCESS , LEX_ERR_UNKNOWN_TOKEN , LEX_ERR_INVALID_REAL , LEX_ERR_INVALID_INT ,
@@ -25,9 +30,9 @@ enum TokenType {
 struct Token 
 {
     enum   TokenType type;
-    char*  lexeme;
     long   int_value;
     double flt_value;
+    std::string lexeme = {};
 
     size_t line_number;
     size_t pos_in_line;
@@ -45,7 +50,7 @@ struct OperatorInfo {
 
 struct LexerState 
 {
-    char*  input_string;
+    std::string  input_string;
     size_t input_len;
     size_t num_tokens;
     Token* tokens;
@@ -57,20 +62,26 @@ struct LexerState
     char   curr_char;
     size_t curr_ch_idx;
 
-    char*  lexeme_buffer;
-    size_t lexeme_buffer_size;
+    std::string lexeme_buffer;
 
     size_t tokenize_string();
     size_t maybe_parse_identifier();
     size_t maybe_parse_num_literal();
     size_t maybe_parse_operators();
 
-    void   insert_token(const char*, enum TokenType);
-    Token* do_insert_token(const char*, enum TokenType, Token*, size_t, size_t, size_t);
-};
+    ~LexerState() 
+    {
+        Token* curr_token = tokens;
+        while (curr_token != NULL) 
+        {
+            Token* to_delete = curr_token;
+            curr_token = curr_token->next;
+            delete to_delete;
+        }
+    }
 
-char * check_if_realloc       ( char* str, size_t* capacity, size_t size);
-void   insert_token           ( char*, enum TokenType, LexerState* );
-Token* do_insert_token        ( char*, enum TokenType, Token*, size_t, size_t, size_t );
-void   preprocess_string      ( char*, size_t);
+    void   insert_token(const std::string&, enum TokenType);
+    Token* do_insert_token(const std::string&, enum TokenType, Token*, size_t, size_t, size_t);
+};
+void preprocess_string(char*, size_t);
 #endif

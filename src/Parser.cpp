@@ -10,7 +10,7 @@ bool match_token(ParserState* parser, enum TokenType type)
     return parser->curr_token != NULL && parser->curr_token->type == type;
 }
 
-void emit_error(ParserState* parser, error_t type)
+void emit_error(ParserState* parser, lex_error_t type)
 {
     parser->errors = do_append_error(parser->errors, type, parser->curr_token, parser);
 }
@@ -19,7 +19,7 @@ void emit_error(ParserState* parser, error_t type)
 // Maybe there's a better way to organize this. The only reason that the 
 // curr_line_idx and curr_pos_in_line is retrieved from the parser instead 
 // of the current token is because the current token may be null
-ErrorList* do_append_error(ErrorList* root, error_t type, Token* errant_token, ParserState* parser)
+ErrorList* do_append_error(ErrorList* root, lex_error_t type, Token* errant_token, ParserState* parser)
 {
     if(root == NULL)
     {

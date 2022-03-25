@@ -1,6 +1,8 @@
 #include "AST_Statement.h"
 #include <stdlib.h>
 
+void free_declaration(AST_Declaration*);
+
 AST_Statement* parse_statement(ParserState* parser)
 {
     AST_Statement* stmt = NULL;
@@ -96,7 +98,7 @@ AST_Statement* create_statement(stmt_t type,
                                 AST_Statement   *body,
                                 AST_Statement   *else_blk)
 {
-    AST_Statement* stmt = (AST_Statement*) malloc(sizeof(AST_Statement));
+    AST_Statement* stmt = new AST_Statement();
     stmt->next     = NULL;
     stmt->type     = type;
     stmt->expr     = expr;
@@ -104,4 +106,22 @@ AST_Statement* create_statement(stmt_t type,
     stmt->body     = body;
     stmt->else_blk = else_blk;
     return stmt;
+}
+
+void free_statement(AST_Statement* stmt)
+{
+    if(stmt != NULL)
+    {
+        if(stmt->expr)
+            free_expression(stmt->expr);
+        if(stmt->body)
+            free_statement(stmt->body);
+        if(stmt->else_blk)
+            free_statement(stmt->else_blk);
+        if(stmt->decl)
+            free_declaration(stmt->decl);
+        if(stmt->next)
+            free_statement(stmt->next);
+        delete stmt;
+    }
 }

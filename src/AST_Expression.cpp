@@ -184,22 +184,17 @@ bool check_if_binary_op(ParserState* parser, Operator_Info* op_info)
 
 AST_Expression* create_expr(expr_t type, AST_Expression* lhs, AST_Expression* rhs)
 {
-    AST_Expression* expr = (AST_Expression*) malloc(sizeof(AST_Expression));
+    AST_Expression* expr = new AST_Expression();
     expr->type = type;
     expr->lhs  = lhs;
     expr->rhs  = rhs;
     return expr;
 }
 
-AST_Expression* create_expr_ident(const char* str, AST_Expression* lhs, AST_Expression* rhs)
+AST_Expression* create_expr_ident(const std::string& ident, AST_Expression* lhs, AST_Expression* rhs)
 {
     AST_Expression* expr = create_expr(EXPR_IDENT, lhs, rhs);
-
-    size_t str_len   = strlen(str);
-    expr->ident_name = (char*) malloc(str_len + 1);
-    expr->ident_name[str_len] = '\0';
-    strncpy(expr->ident_name, str, str_len);
-
+    expr->ident_name = ident;
     return expr;
 }
 
@@ -219,13 +214,11 @@ AST_Expression* create_expr_float(double flt_val)
 
 void free_expression(AST_Expression* expr)
 {
-    if (expr != NULL)
+    if(expr != NULL)
     {
-        free_expression(expr->lhs); free(expr->lhs);
-        free_expression(expr->rhs); free(expr->rhs);
+        if(expr->lhs) free_expression(expr->lhs);
+        if(expr->rhs) free_expression(expr->rhs);
 
-        if (expr->type == EXPR_IDENT)
-            free(expr->ident_name);
+        delete expr;
     }
-    return;
 }

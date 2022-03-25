@@ -8,17 +8,16 @@
 #include "Lexer.h"
 
 
-void LexerState::insert_token(const char* lexeme, enum TokenType type)
+void LexerState::insert_token(const std::string& lexeme, enum TokenType type)
 {
     tokens = do_insert_token(lexeme, type, tokens, curr_line_number, curr_pos_in_line, line_start_idx);
 }
 
-Token* LexerState::do_insert_token(const char* lexeme, enum TokenType type, Token* token_stream, size_t line_no, size_t line_pos, size_t line_idx)
+Token* LexerState::do_insert_token(const std::string& lexeme, enum TokenType type, Token* token_stream, size_t line_no, size_t line_pos, size_t line_idx)
 {
     if(token_stream == NULL)
     {
-        size_t lex_length      = strlen(lexeme);
-        Token* new_token       = (Token*) malloc(sizeof(Token));
+        Token* new_token       = new Token();
         new_token->next        = NULL;
         new_token->prev        = NULL;
         new_token->type        = type;
@@ -28,25 +27,16 @@ Token* LexerState::do_insert_token(const char* lexeme, enum TokenType type, Toke
         switch(type)
         {
             case TOKEN_IDENTIFIER:
-            {
-                new_token->lexeme = (char *)malloc(lex_length + 1);
-                new_token->lexeme[lex_length] = 0;
-                strncpy(new_token->lexeme, lexeme, lex_length);
-            }
+                new_token->lexeme = lexeme;
             break;
             case TOKEN_INT_LITERAL:
-                new_token->int_value = strtol(lexeme, NULL, 10);
+                new_token->int_value = std::stol(lexeme);
             break;
             case TOKEN_FLOAT_LITERAL:
-                new_token->flt_value = strtod(lexeme, NULL);
+                new_token->flt_value = std::stod(lexeme);
             break;
             default:
-            {
-                size_t len = strlen(lexeme);
-                new_token->lexeme = (char*) malloc(len + 1);
-                new_token->lexeme[len] = 0;
-                strncpy(new_token->lexeme, lexeme, len);
-            }
+                new_token->lexeme = lexeme;
             break;
         }
         return new_token;
@@ -59,15 +49,13 @@ Token* LexerState::do_insert_token(const char* lexeme, enum TokenType type, Toke
 size_t LexerState::tokenize_string()
 {
     curr_ch_idx        = 0;
-    lexeme_buffer_size = 0;
-    lexeme_buffer      = 0;
     num_tokens         = 0;
 
     line_start_idx     = 0;
     curr_line_number   = 1;
     curr_pos_in_line   = 1;
 
-    preprocess_string(input_string, input_len);
+    preprocess_string(&input_string[0], input_len);
 
     size_t status = LEX_SUCCESS;
     while(curr_ch_idx < input_len)
@@ -93,7 +81,7 @@ size_t LexerState::tokenize_string()
         read_valid_token &= maybe_parse_operators();
         if (!read_valid_token)
         {
-            printf("[Error] Unrecognized token at line %lld \"%c\"\n", curr_line_number, curr_char);
+            printf("[Error] Unrecognized token at line %lu \"%c\"\n", curr_line_number, curr_char);
             printf("    \"");
             while(input_string[line_start_idx++] != '\n')
                 printf("%c", input_string[line_start_idx - 1]);
@@ -127,9 +115,7 @@ size_t LexerState::maybe_parse_num_literal()
     size_t num_len      = end_idx - curr_ch_idx;
     enum TokenType type = (num_periods == 0 ? TOKEN_INT_LITERAL : TOKEN_FLOAT_LITERAL);
 
-    lexeme_buffer = check_if_realloc(lexeme_buffer, &lexeme_buffer_size, num_len + 1);
-    lexeme_buffer[num_len] = '\0';
-    strncpy(lexeme_buffer, input_string + curr_ch_idx, num_len);
+    lexeme_buffer = input_string.substr(curr_ch_idx, num_len);
 
     insert_token(lexeme_buffer, type);
     curr_ch_idx = end_idx;
@@ -140,31 +126,22 @@ size_t LexerState::maybe_parse_num_literal()
 
 size_t LexerState::maybe_parse_identifier()
 {
-    static const char* KEYWORDS[] = {
+    static const std::array<std::string, 4> KEYWORDS = {
         "if", "else", "func", "return"
     };
 
     size_t end_idx = curr_ch_idx + 1;
-    while(end_idx < input_len && 
-          (isalnum(input_string[end_idx]) || input_string[end_idx] == '_'))
-    {
+    while(end_idx < input_len && (isalnum(input_string[end_idx]) || input_string[end_idx] == '_'))
         end_idx++;
-    }
     
-    size_t ident_len  = end_idx - curr_ch_idx;
-    lexeme_buffer = check_if_realloc(lexeme_buffer, &lexeme_buffer_size, ident_len + 1);
-    strncpy(lexeme_buffer, (input_string + curr_ch_idx), ident_len);
-    lexeme_buffer[ident_len] = 0;
+    const size_t ident_len = end_idx - curr_ch_idx;
+    lexeme_buffer = input_string.substr(curr_ch_idx, ident_len);
 
     enum TokenType type = TOKEN_IDENTIFIER;
-    for (int i = 0; i < 4; ++i) 
-    {
-        if(strcmp(lexeme_buffer, KEYWORDS[i]) == 0)
-        {
-            type = static_cast<TokenType>(KEYWORD_IF + i);
-            break;
-        }
-    }
+    auto match = std::find(KEYWORDS.begin(), KEYWORDS.end(), lexeme_buffer);
+
+    if (match != KEYWORDS.end())
+        type = static_cast<TokenType>(KEYWORD_IF + (match - KEYWORDS.begin()));
 
     insert_token(lexeme_buffer, type);
     curr_ch_idx += ident_len;
@@ -233,17 +210,4 @@ void preprocess_string(char* input_string, size_t input_len)
             }
         }
     }
-}
-
-char* check_if_realloc(char* str, size_t* capacity, size_t size)
-{
-    if (*capacity < size)
-    {
-        char* new_str = (char*) malloc(size + 1);
-        *capacity     = size;
-
-        if (str != NULL) free(str);
-        return new_str;
-    }
-    return str;
 }

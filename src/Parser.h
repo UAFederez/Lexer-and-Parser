@@ -3,6 +3,7 @@
 
 #include "Lexer.h"
 #include <stdbool.h>
+#include <cstddef>
 
 /**
     Program       -> Declaration* | \e
@@ -21,14 +22,14 @@
     If_Statement  -> if Expression \{? Statement+ \}? { else \{? Statement \}? }?
 **/
 
-enum error_t {
+enum lex_error_t {
     ERR_NONE                  , ERR_LEX_UNRECOGNIZED_TOKEN , ERR_PARSE_MALFORMED_EXPR ,
     ERR_PARSE_UNMATCHED_PAREN , ERR_PARSE_INVALID_TYPE     , ERR_PARSE_INVALID_DECL   ,
     ERR_PARSE_INVALID_PARAM   , ERR_PARSE_IF_STMT_NO_BODY  ,
 };
 
 struct ErrorList {
-    error_t type;
+    lex_error_t type;
     size_t line_number;
     size_t pos_in_line;
     Token* errant_token;
@@ -68,13 +69,13 @@ struct ParserState
 
     bool match_token(enum TokenType);
     bool get_next_token();
-    void emit_error(error_t type);
+    void emit_error(lex_error_t type);
 };
 
 bool match_token     (ParserState*, enum TokenType);
 bool get_next_token  (ParserState*);
 
-void emit_error(ParserState* parser, error_t type);
-ErrorList* do_append_error(ErrorList*, error_t, Token *, ParserState*);
+void emit_error(ParserState* parser, lex_error_t type);
+ErrorList* do_append_error(ErrorList*, lex_error_t, Token *, ParserState*);
 
 #endif

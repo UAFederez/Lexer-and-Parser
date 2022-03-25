@@ -1,7 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <string>
+#include <fstream>
+#include <cstdlib>
+#include <cstdio>
+#include <sstream>
 
 #include "Lexer.h"
 #include "Parser.h"
@@ -10,23 +13,19 @@
 #include "AST_Statement.h"
 #include "GraphvizOutput.h"
 
-char* load_program_source(const char* path, size_t* source_len)
+std::string load_program_source(const char* path)
 {
-    FILE* input_file = fopen(path, "rb");
+    std::ifstream input_file(path);
 
-    if(!input_file)
-        return NULL;
+    if (!input_file)
+    {
+        std::fprintf(stderr, "[Error] could not load file: %s\n", path);
+        return {};
+    }
+    std::ostringstream oss;
+    oss << input_file.rdbuf();
 
-    fseek(input_file, 0, SEEK_END);
-    size_t input_len  = ftell(input_file);
-    fseek(input_file, 0, SEEK_SET);
-
-    char* input_string = (char*) malloc(input_len + 1);
-    fread(input_string, input_len, 1, input_file);
-    input_string[input_len] = '\0';
-    
-    *source_len = input_len;
-    return input_string;
+    return oss.str();
 }
 
 void print_expr(AST_Expression* expr, size_t indent)
@@ -37,17 +36,17 @@ void print_expr(AST_Expression* expr, size_t indent)
             printf("  ");
         switch (expr->type)
         {
-            case EXPR_ADD    : printf("+\n")                    ; break ;
-            case EXPR_SUB    : printf("-\n")                    ; break ;
-            case EXPR_MUL    : printf("*\n")                    ; break ;
-            case EXPR_DIV    : printf("/\n")                    ; break ;
-            case EXPR_ASSIGN : printf("=\n")                    ; break ;
-            case EXPR_IDENT  : printf("%s\n", expr->ident_name) ; break ;
-            case EXPR_INT    : printf("%ld\n", expr->int_value) ; break ;
-            case EXPR_FLOAT  : printf("%f\n", expr->flt_value)  ; break ;
-            case EXPR_CALL   : printf("call\n")                 ; break ;
-            case EXPR_ARG    : printf("arg\n")                  ; break ;
-            case EXPR_NEG    : printf("neg\n")                  ; break ;
+            case EXPR_ADD    : printf("+\n")                            ; break ;
+            case EXPR_SUB    : printf("-\n")                            ; break ;
+            case EXPR_MUL    : printf("*\n")                            ; break ;
+            case EXPR_DIV    : printf("/\n")                            ; break ;
+            case EXPR_ASSIGN : printf("=\n")                            ; break ;
+            case EXPR_IDENT  : printf("%s\n", expr->ident_name.c_str()) ; break ;
+            case EXPR_INT    : printf("%ld\n", expr->int_value)         ; break ;
+            case EXPR_FLOAT  : printf("%f\n", expr->flt_value)          ; break ;
+            case EXPR_CALL   : printf("call\n")                         ; break ;
+            case EXPR_ARG    : printf("arg\n")                          ; break ;
+            case EXPR_NEG    : printf("neg\n")                          ; break ;
             default: break;
         }
         print_expr(expr->lhs, indent + 1);
@@ -59,25 +58,25 @@ void print_tokens(Token* token_stream)
 {
     for( Token* tok = token_stream ; tok != NULL ; tok = tok->next )
     {
-        printf("(line: %-2lld) ", tok->line_number);
+        printf("(line: %-2lu) ", tok->line_number);
         switch(tok->type)
         {
-            case TOKEN_IDENTIFIER    : printf("[Ident ] %s\n",  tok->lexeme)     ; break ;
-            case TOKEN_INT_LITERAL   : printf("[Int   ] %ld\n", tok->int_value)  ; break ;
-            case TOKEN_FLOAT_LITERAL : printf("[Float ] %f\n",  tok->flt_value)  ; break ;
-            case TOKEN_LEFT_PAREN    : printf("[LParen] %s\n",  tok->lexeme)     ; break ;
-            case TOKEN_RIGHT_PAREN   : printf("[RParen] %s\n",  tok->lexeme)     ; break ;
-            case TOKEN_EOF           : printf("[EOF   ] %s\n",  tok->lexeme)     ; break ;
+            case TOKEN_IDENTIFIER    : printf("[Ident ] %s\n",  tok->lexeme.c_str())     ; break ;
+            case TOKEN_INT_LITERAL   : printf("[Int   ] %ld\n", tok->int_value)          ; break ;
+            case TOKEN_FLOAT_LITERAL : printf("[Float ] %f\n",  tok->flt_value)          ; break ;
+            case TOKEN_LEFT_PAREN    : printf("[LParen] %s\n",  tok->lexeme.c_str())     ; break ;
+            case TOKEN_RIGHT_PAREN   : printf("[RParen] %s\n",  tok->lexeme.c_str())     ; break ;
+            case TOKEN_EOF           : printf("[EOF   ] %s\n",  tok->lexeme.c_str())     ; break ;
 
             case TOKEN_COMP_LESS: case TOKEN_COMP_GREATER:
-                printf("[Comp  ] %s\n", tok->lexeme);
+                printf("[Comp  ] %s\n", tok->lexeme.c_str());
             break;
             case KEYWORD_IF : case KEYWORD_FUNC : case KEYWORD_RETURN : case KEYWORD_ELSE :
-                printf("[Keywd ] %s\n", tok->lexeme);
+                printf("[Keywd ] %s\n", tok->lexeme.c_str());
             break;
 
             default:
-                printf("[ChTok ] %s\n", tok->lexeme);
+                printf("[ChTok ] %s\n", tok->lexeme.c_str());
             break;
         }
     }
@@ -85,28 +84,27 @@ void print_tokens(Token* token_stream)
 
 int main()
 {
-    size_t source_len   = 0;
-    char* source_string = load_program_source("sample_program.lang", &source_len);
-    if(!source_string)
+    std::string source_string = load_program_source("sample_program.lang");
+    if(!source_string.size())
     {
         printf("[Error] Could not read input file!\n");
         return -1;
     }
 
-    if(source_len == 0) 
+    if(source_string.size() == 0) 
     {
         printf("File is empty. No need to do anything...");
         return 0;
     }
 
     LexerState lexer_state;
-    lexer_state.input_string = source_string;
+    lexer_state.input_len    = source_string.size();
+    lexer_state.input_string = std::move(source_string);
     lexer_state.tokens       = NULL;
-    lexer_state.input_len    = source_len;
 
     size_t lex_result = lexer_state.tokenize_string();
 
-    printf("Lexer finished with status: %lld\n", lex_result);
+    printf("Lexer finished with status: %lu\n", lex_result);
 
     ParserState parser;
     parser.status       = PARSE_SUCCESS;
@@ -122,19 +120,19 @@ int main()
         switch(parser.status)
         {
             case PARSE_ERR_MALFORMED_EXPR: 
-                printf("[Error] Malformed expression at line %lld:%lld\n", errant_line, pos_in_line);
+                printf("[Error] Malformed expression at line %lu:%lu\n", errant_line, pos_in_line);
                 break;
             case PARSE_ERR_UNMATCHED_PAREN: 
-                printf("[Error] Unmatched parentheses at line %lld\n", errant_line);
+                printf("[Error] Unmatched parentheses at line %lu\n", errant_line);
                 break;
             case PARSE_ERR_INVALID_DECL:
-                printf("[Error] Invalid declaration at line %lld\n", errant_line);
+                printf("[Error] Invalid declaration at line %lu\n", errant_line);
                 break;
             case PARSE_ERR_INVALID_TYPE:
-                printf("[Error] Unrecognized type name at line %lld. This language currently does not support user-defined types\n", errant_line);
+                printf("[Error] Unrecognized type name at line %lu. This language currently does not support user-defined types\n", errant_line);
                 break;
             case PARSE_ERR_INVALID_PARAM:
-                printf("[Error] Invalid parameter at line %lld.\n", errant_line);
+                printf("[Error] Invalid parameter at line %lu.\n", errant_line);
                 break;
             default: break;
         }
@@ -150,6 +148,6 @@ int main()
         print_graph(&gv);
         printf("Done!\n");
     }
-    free(source_string);
+    free_declaration(decl);
     return 0;
 }

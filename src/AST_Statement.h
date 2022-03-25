@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <cstddef>
 
 #include "Parser.h"
 #include "AST_Expression.h"
@@ -13,9 +14,10 @@ typedef enum {
     STMT_RETURN
 } stmt_t;
 
-typedef struct AST_STMT {
+struct AST_Statement
+{
     stmt_t type;
-    struct AST_STMT *next;
+    AST_Statement *next;
      
     // represents condition if type -> STMT_IF | STMT_FOR
     // return value if type == STMT_RETURN
@@ -23,9 +25,9 @@ typedef struct AST_STMT {
     AST_Expression * expr;
     AST_Declaration* decl;
 
-    struct AST_STMT *body;     // Body of if's, for's, etc..
-    struct AST_STMT *else_blk;
-} AST_Statement;
+    AST_Statement *body;     // Body of if's, for's, etc..
+    AST_Statement *else_blk;
+};
 
 AST_Statement* parse_block       (ParserState* parser, bool);
 AST_Statement* parse_statement   (ParserState*);
@@ -33,4 +35,5 @@ AST_Statement* parse_if_statement(ParserState*);
 AST_Statement* create_statement  (stmt_t, AST_Expression*, AST_Declaration*, AST_Statement*, AST_Statement*);
 AST_Statement* parse_return_statement(ParserState*);
 
+void free_statement(AST_Statement*);
 #endif

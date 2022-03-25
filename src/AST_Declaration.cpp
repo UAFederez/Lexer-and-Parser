@@ -176,7 +176,7 @@ bool parse_ident_type_pair(ParserState* parser, Token** out_ident, data_t* out_t
 
 data_t get_decl_type(ParserState* parser, parse_status_t* status)
 {
-    static const char* PRIMITIVE_TYPE_NAMES[] = { "int", "float" };
+    static const std::string PRIMITIVE_TYPE_NAMES[] = { "int", "float" };
 
     if (!match_token(parser, TOKEN_IDENTIFIER))
     {
@@ -188,7 +188,7 @@ data_t get_decl_type(ParserState* parser, parse_status_t* status)
     bool has_matched_type = false;
     for (size_t i = 0; i < 2 && !has_matched_type; i++) 
     {
-        if (strcmp(parser->curr_token->lexeme, PRIMITIVE_TYPE_NAMES[i]) == 0)
+        if (parser->curr_token->lexeme == PRIMITIVE_TYPE_NAMES[i])
         {
             type = static_cast<data_t>(TYPE_INT + i);
             has_matched_type = true;
@@ -201,9 +201,9 @@ data_t get_decl_type(ParserState* parser, parse_status_t* status)
     return type;
 }
 
-AST_Declaration* create_func_decl(char* name, data_t return_type, AST_Parameter* params, AST_Statement* stmts)
+AST_Declaration* create_func_decl(const std::string& name, data_t return_type, AST_Parameter* params, AST_Statement* stmts)
 {
-    AST_Declaration* func = (AST_Declaration*) malloc(sizeof(AST_Declaration));
+    AST_Declaration* func = new AST_Declaration();
     func->expr = NULL;
     func->next = NULL;
 
@@ -212,17 +212,14 @@ AST_Declaration* create_func_decl(char* name, data_t return_type, AST_Parameter*
     func->type_info.return_type = return_type;
     func->body = stmts;
 
-    size_t name_len = strlen(name);
-    func->name = (char*) malloc(name_len + 1);
-    func->name[name_len] = '\0';
-    strncpy(func->name, name, name_len);
+    func->name = name;
 
     return func;
 }
 
-AST_Declaration* create_ident_decl(char* ident_name, data_t type, AST_Expression* expr)
+AST_Declaration* create_ident_decl(const std::string& ident_name, data_t type, AST_Expression* expr)
 {
-    AST_Declaration* decl = (AST_Declaration*) malloc(sizeof(AST_Declaration));
+    AST_Declaration* decl = new AST_Declaration();
 
     decl->next = NULL;
     decl->expr = expr;
@@ -230,24 +227,43 @@ AST_Declaration* create_ident_decl(char* ident_name, data_t type, AST_Expression
     decl->type_info.params = NULL;
     decl->type_info.return_type = TYPE_VOID;
 
-    size_t ident_len = strlen(ident_name);
-    decl->name = (char*) malloc(ident_len + 1);
-    decl->name[ident_len] = '\0';
-    strncpy(decl->name, ident_name, ident_len);
+    decl->name = ident_name;
 
     return decl;
 }
 
-AST_Parameter* create_param_node(char* name, data_t type)
+AST_Parameter* create_param_node(const std::string& name, data_t type)
 {
-    AST_Parameter* param = (AST_Parameter*) malloc(sizeof(AST_Parameter));
+    AST_Parameter* param = new AST_Parameter();
     param->next = NULL;
     param->type = type;
-
-    size_t name_len = strlen(name);
-    param->name = (char*) malloc(name_len + 1);
-    param->name[name_len] = '\0';
-    strncpy(param->name, name, name_len);
+    param->name = name;
 
     return param;
+}
+
+void free_declaration(AST_Declaration* decl)
+{
+    if(decl != NULL)
+    {
+        if(decl->expr)
+            free_expression(decl->expr);
+        if(decl->body)
+            free_statement(decl->body);
+
+        if(decl->type_info.type == TYPE_FUNCTION) 
+        {
+            AST_Parameter* curr_param = decl->type_info.params;
+            while(curr_param != NULL)
+            {
+                AST_Parameter* to_delete = curr_param;
+                curr_param = curr_param->next;
+                delete to_delete;
+            }
+        }
+
+        if(decl->next)
+            free_declaration(decl->next);
+        delete decl;
+    }
 }

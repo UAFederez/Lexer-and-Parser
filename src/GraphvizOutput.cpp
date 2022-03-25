@@ -31,11 +31,13 @@ int output_expression(AST_Expression* expr, GraphvizState* gv)
         switch(expr->type)
         {
             case EXPR_ADD       : fprintf(gv->out, EXPR_FMT, expr_id, "+")               ; break ;
+            case EXPR_DIV       : fprintf(gv->out, EXPR_FMT, expr_id, "/")               ; break ;
+            case EXPR_MUL       : fprintf(gv->out, EXPR_FMT, expr_id, "*")               ; break ;
             case EXPR_SUB       : fprintf(gv->out, EXPR_FMT, expr_id, "-")               ; break ;
             case EXPR_CALL      : fprintf(gv->out, EXPR_FMT, expr_id, "EXPR_CALL")       ; break ;
             case EXPR_ARG       : fprintf(gv->out, EXPR_FMT, expr_id, "EXPR_ARG")        ; break ;
             case EXPR_COMP_LESS : fprintf(gv->out, EXPR_FMT, expr_id, "\\<")             ; break ;
-            case EXPR_IDENT     : fprintf(gv->out, EXPR_FMT, expr_id, expr->ident_name)  ; break ;
+            case EXPR_IDENT     : fprintf(gv->out, EXPR_FMT, expr_id, expr->ident_name.c_str())  ; break ;
             case EXPR_FLOAT     : fprintf(gv->out, EXPR_FMT_F, expr_id, expr->flt_value) ; break ;
             case EXPR_INT       : fprintf(gv->out, EXPR_FMT_I, expr_id, expr->int_value) ; break ;
             default             : fprintf(gv->out, EXPR_FMT, expr_id, "op")              ; break ;
@@ -88,7 +90,7 @@ int output_decl_type_params(AST_Parameter* params, GraphvizState* gv)
         int type_id  = new_node(gv);
 
         fprintf(gv->out, PARAM_FMT, param_id);
-        fprintf(gv->out, NAME_FMT, name_id, params->name);
+        fprintf(gv->out, NAME_FMT, name_id, params->name.c_str());
         fprintf(gv->out, ENUM_FMT, type_id, TYPE_STR[params->type]);
 
         if (params->next != NULL)
@@ -133,7 +135,7 @@ int output_decl_graph(AST_Declaration* root, GraphvizState* gv)
         int name_id = new_node(gv);
 
         fprintf(gv->out, DECL_FMT, decl_id);
-        fprintf(gv->out, NAME_FMT, name_id, root->name);
+        fprintf(gv->out, NAME_FMT, name_id, root->name.c_str());
 
         int type_info_id = output_decl_type_info(&root->type_info, gv);
         int expr_id      = output_expression(root->expr, gv);
