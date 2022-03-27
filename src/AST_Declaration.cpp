@@ -8,6 +8,43 @@
 
 namespace ast 
 {
+    int VariableDecl::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* fmt = "    decl_%d[label=\"{%s|{<f1>type|<f2>expr}}\"];\n";
+        char buffer[512];
+
+        int decl_id = doc.next_id();
+        std::snprintf(buffer, 512, fmt, decl_id, name.c_str());
+        doc.oss << buffer;
+
+        if (expr)
+        {
+            int expr_id = expr->output_graphviz(doc);
+            doc.oss << "    decl_" << decl_id << ":<f2> -> expr_" << expr_id << ";\n";
+        }
+        return decl_id;
+    }
+
+    int VarDeclStatement::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* fmt = "    stmt_%d[label=\"{VarDeclStatement|{<f1>decl|<f2>next}}\"]\n";
+
+        int stmt_id = doc.next_id();
+        int decl_id = decl->output_graphviz(doc);
+        
+        char buffer[512];
+        std::snprintf(buffer, 512, fmt, stmt_id);
+        doc.oss << buffer;
+
+        doc.oss << "    stmt_" << stmt_id << ":<f1> -> decl_" << decl_id << ";\n";
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    stmt_" << stmt_id << ":<f2> -> stmt_" << next_id << ";\n";
+        }
+        return stmt_id;
+    }
+
     std::unique_ptr<Declaration> parse_declaration(ParserState* parser)
     {
         auto decl = maybe_parse_function_decl(parser);
@@ -21,6 +58,33 @@ namespace ast
         parser->emit_error("Invalid declaration");
         return nullptr;
     }
+
+    std::unique_ptr<Statement> parse_var_decl_statement(ParserState* parser)
+    {
+        Token* first_token = parser->curr_token;
+
+        if (!parser->match_token(TOKEN_IDENTIFIER))
+        {
+            parser->curr_token = first_token;
+            return nullptr;
+        }
+        auto opt_decl = parse_ident_type_pair(parser);
+        if (!opt_decl)
+        {
+            parser->curr_token = first_token;
+            return nullptr;
+        }
+        std::unique_ptr<Expression> expr = nullptr;
+        if (parser->match_token(TOKEN_OP_EQU))
+        {
+            parser->get_next_token();
+            expr = parse_expression(parser);
+        }
+        auto decl = std::make_unique<VariableDecl>(opt_decl->first,  opt_decl->second, expr.release());
+        return std::make_unique<VarDeclStatement>(decl.release());
+    }
+
+
     std::unique_ptr<Declaration> maybe_parse_function_decl(ParserState* parser)
     {
         Token* ident_token = parser->curr_token;
@@ -133,5 +197,59 @@ namespace ast
             return std::optional<std::pair<Type_t, std::string>> { {type, ident_token->lexeme } };
         }
         return std::nullopt;
+    }
+    int ParameterNode::output_graphviz(GraphvizDocument& doc) const 
+    {
+        const char* fmt      = "    param_%d[label=\"{ParameterNode|{<f1>name|<f2>type|<f3>next}}\"];\n";
+        const char* fmt_name = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+
+        char buffer[1024] = {};
+
+        int param_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt, param_id);
+        doc.oss << buffer;
+
+        int name_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt_name, name_id, name.c_str());
+        doc.oss << buffer;
+
+        doc.oss << "    param_" << param_id << ":<f1> -> str_" << name_id << ";\n";
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    param_" << param_id << ":<f3> -> param_" << next_id << ";\n";
+        }
+        return param_id; 
+    }
+
+    int FunctionDecl::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* fmt      = "    decl_%d[label=\"{FunctionDecl | {<f1>name |<f2> params|<f3> ret_type|<f4> body|<f5>next}}\"];\n";
+        static const char* fmt_name = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+
+        char buffer[1024] = {};
+
+        int decl_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt, decl_id);
+        doc.oss << buffer;
+
+        int name_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt_name, name_id, name.c_str());
+        doc.oss << buffer;
+
+        doc.oss << "    decl_" << decl_id << ":<f1> -> str_" << name_id << ";\n";
+
+        if(params)
+        {
+            int param_id = params->output_graphviz(doc);
+            doc.oss << "    decl_" << decl_id << ":<f2> -> param_" << param_id << ";\n";
+        }
+
+        if(body)
+        {
+            int body_id = body->output_graphviz(doc);
+            doc.oss << "    decl_" << decl_id << ":<f4> -> stmt_" << body_id << ";\n";
+        }
+        return decl_id;
     }
 }

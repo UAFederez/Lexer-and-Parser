@@ -13,16 +13,22 @@ namespace ast
             stmt = ast::parse_return_statement(parser);
         else
         {
-            auto expr = ast::parse_expression(parser);
+            stmt = parse_var_decl_statement(parser);
+            std::unique_ptr<Expression> expr = nullptr; 
             
+            // If this wasn't a declaration maybe it is an expression
+            if (!stmt)
+            {
+                expr = ast::parse_expression(parser);
+                stmt = std::make_unique<ExprStatement>(false, expr.release());
+            }
+
             if (!parser->match_token(TOKEN_SEMICOLON))
             {
                 parser->emit_error("Expected a semicolon");
                 return nullptr;
             }
             parser->get_next_token();
-
-            stmt = std::make_unique<ExprStatement>(false, expr.release());
         }
         return stmt;
     }
@@ -89,4 +95,59 @@ namespace ast
         parser->get_next_token();
         return std::make_unique<ExprStatement>(true, ret_expr.release());
     }
+
+    int ExprStatement::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* expr_fmt  = "    stmt_%d[label=\"{%s|{<f1>expr|<f2>next}}\"];\n";
+
+        int stmt_id = doc.next_id();
+        char buffer[1024] = {};
+
+        std::snprintf(buffer, 1024, expr_fmt, stmt_id, is_return_stmt ? "ReturnStatement" : "ExprStatement");
+        doc.oss << buffer << '\n'; 
+
+        if(expr)
+        {
+            int expr_id = expr->output_graphviz(doc);
+            doc.oss << "    stmt_" << stmt_id << ":<f1> -> expr_" << expr_id << ";\n";
+        }
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    stmt_" << stmt_id << ":<f2> -> stmt_" << next_id << ";\n";
+        }
+        return stmt_id;
+    }
+
+    int IfStatement::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* IF_FMT   = "    stmt_%d[label=\"{IfStatement|{<f1>condition|<f2>then|<f3>else|<f4>next}}\"];\n";
+
+        int if_id = doc.next_id();
+        char buffer[1024] = {};
+
+        std::snprintf(buffer, 1024, IF_FMT, if_id);
+        doc.oss << buffer << '\n'; 
+
+        int cond_id = condition->output_graphviz(doc);
+        doc.oss << "    stmt_" << if_id << ":<f1> -> expr_" << cond_id << ";\n";
+
+        if(body)
+        {
+            int then_id = body->output_graphviz(doc);
+            doc.oss << "    stmt_" << if_id << ":<f2> -> stmt_" << then_id << ";\n";
+        }
+        if(else_blk)
+        {
+            int else_id = else_blk->output_graphviz(doc);
+            doc.oss << "    stmt_" << if_id << ":<f3> -> stmt_" << else_id << ";\n";
+        }
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    stmt_" << if_id << ":<f4> -> stmt_" << next_id << ";\n";
+        }
+        return if_id;
+    }
+
 }
