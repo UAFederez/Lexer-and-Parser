@@ -10,38 +10,35 @@ bool match_token(ParserState* parser, enum TokenType type)
     return parser->curr_token != NULL && parser->curr_token->type == type;
 }
 
-void emit_error(ParserState* parser, lex_error_t type)
+void ParserState::emit_error(const std::string& message)
 {
-    parser->errors = do_append_error(parser->errors, type, parser->curr_token, parser);
+    errors.push_back({ message, curr_line_idx, curr_pos_in_line });
 }
 
-// TODO: 
-// Maybe there's a better way to organize this. The only reason that the 
-// curr_line_idx and curr_pos_in_line is retrieved from the parser instead 
-// of the current token is because the current token may be null
-ErrorList* do_append_error(ErrorList* root, lex_error_t type, Token* errant_token, ParserState* parser)
+bool ParserState::match_token(enum TokenType type)
 {
-    if(root == NULL)
-    {
-        ErrorList* new_err = (ErrorList*) malloc(sizeof(ErrorList));
+    return curr_token-> type != TOKEN_EOF && curr_token->type == type;
+}
 
-        new_err->type = type;
-        new_err->next = NULL;
-        new_err->errant_token = errant_token;
-        new_err->line_number  = parser->curr_line_idx;
-        new_err->pos_in_line  = parser->curr_pos_in_line;
-        return new_err;
+bool ParserState::get_next_token()
+{
+    if(curr_token->type != TOKEN_EOF) 
+    {
+        curr_line_idx    = curr_token->line_number;
+        curr_pos_in_line = curr_token->pos_in_line;
+        curr_token       = curr_token->next;
+        return true;
     }
-    root->next = do_append_error(root->next, type, errant_token, parser);
-    return root;
+    return false;
 }
 
 bool get_next_token (ParserState* parser)
 {
     if(parser->curr_token->type != TOKEN_EOF) 
     {
-        parser->curr_line_idx = parser->curr_token->line_number;
-        parser->curr_token    = parser->curr_token->next;
+        parser->curr_line_idx    = parser->curr_token->line_number;
+        parser->curr_pos_in_line = parser->curr_token->pos_in_line;
+        parser->curr_token       = parser->curr_token->next;
         return true;
     }
     return false;

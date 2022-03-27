@@ -42,12 +42,6 @@ struct Token
     Token* prev;
 };
 
-struct OperatorInfo {
-    char* op;
-    int   precedence;
-    bool  is_left_assoc;
-};
-
 struct LexerState 
 {
     std::string  input_string;
@@ -80,8 +74,8 @@ struct LexerState
         }
     }
 
-    void   insert_token(const std::string&, enum TokenType);
-    Token* do_insert_token(const std::string&, enum TokenType, Token*, size_t, size_t, size_t);
+    void insert_token(const std::string&, enum TokenType);
+    Token* do_insert_token(const std::string&, enum TokenType, Token*);
 };
-void preprocess_string(char*, size_t);
+void preprocess_string(std::string&, size_t);
 #endif

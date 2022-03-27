@@ -7,13 +7,12 @@
 
 #include "Lexer.h"
 
-
 void LexerState::insert_token(const std::string& lexeme, enum TokenType type)
 {
-    tokens = do_insert_token(lexeme, type, tokens, curr_line_number, curr_pos_in_line, line_start_idx);
+    tokens = do_insert_token(lexeme, type, tokens);
 }
 
-Token* LexerState::do_insert_token(const std::string& lexeme, enum TokenType type, Token* token_stream, size_t line_no, size_t line_pos, size_t line_idx)
+Token* LexerState::do_insert_token(const std::string& lexeme, TokenType type, Token* token_stream)
 {
     if(token_stream == NULL)
     {
@@ -21,8 +20,8 @@ Token* LexerState::do_insert_token(const std::string& lexeme, enum TokenType typ
         new_token->next        = NULL;
         new_token->prev        = NULL;
         new_token->type        = type;
-        new_token->line_number = line_no;
-        new_token->pos_in_line = line_pos;
+        new_token->line_number = curr_line_number;
+        new_token->pos_in_line = curr_pos_in_line;
 
         switch(type)
         {
@@ -41,7 +40,7 @@ Token* LexerState::do_insert_token(const std::string& lexeme, enum TokenType typ
         }
         return new_token;
     }
-    token_stream->next       = do_insert_token(lexeme, type, token_stream->next, line_no, line_pos, line_idx);
+    token_stream->next       = do_insert_token(lexeme, type, token_stream->next);
     token_stream->next->prev = token_stream;
     return token_stream;
 }
@@ -55,7 +54,7 @@ size_t LexerState::tokenize_string()
     curr_line_number   = 1;
     curr_pos_in_line   = 1;
 
-    preprocess_string(&input_string[0], input_len);
+    preprocess_string(input_string, input_len);
 
     size_t status = LEX_SUCCESS;
     while(curr_ch_idx < input_len)
@@ -75,13 +74,14 @@ size_t LexerState::tokenize_string()
         curr_char = input_string[curr_ch_idx];
 
         if(!curr_char) break;
+
         if(isalpha(curr_char) && (read_valid_token &= maybe_parse_identifier()))  continue;
         if(isdigit(curr_char) && (read_valid_token &= maybe_parse_num_literal())) continue;
         
         read_valid_token &= maybe_parse_operators();
         if (!read_valid_token)
         {
-            printf("[Error] Unrecognized token at line %lu \"%c\"\n", curr_line_number, curr_char);
+            printf("[Error] Unrecognized token at line %llu \"%c\"\n", curr_line_number, curr_char);
             printf("    \"");
             while(input_string[line_start_idx++] != '\n')
                 printf("%c", input_string[line_start_idx - 1]);
@@ -106,7 +106,7 @@ size_t LexerState::maybe_parse_num_literal()
     {
         if(input_string[end_idx] == '.')
             num_periods++;
-        char_at_end = input_string[end_idx++];
+        char_at_end = input_string[++end_idx];
     }
 
     if(num_periods > 1)
@@ -194,7 +194,7 @@ size_t LexerState::maybe_parse_operators()
     return found_operator;
 }
 
-void preprocess_string(char* input_string, size_t input_len)
+void preprocess_string(std::string& input_string, size_t input_len)
 {
     if(input_len > 2) 
     {

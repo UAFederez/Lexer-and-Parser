@@ -1,127 +1,92 @@
 #include "AST_Statement.h"
 #include <stdlib.h>
 
-void free_declaration(AST_Declaration*);
-
-AST_Statement* parse_statement(ParserState* parser)
+namespace ast 
 {
-    AST_Statement* stmt = NULL;
-    if (match_token(parser, KEYWORD_IF))
-        stmt = parse_if_statement(parser);
-    else if (match_token(parser, KEYWORD_RETURN))
-        stmt = parse_return_statement(parser);
-    else
+    std::unique_ptr<Statement> parse_statement(ParserState* parser)
     {
-        AST_Expression* expr = parse_expression(parser, 0);
-        if(expr)
-            stmt = create_statement(STMT_EXPR, expr, NULL, NULL, NULL);
-        if (match_token(parser, TOKEN_SEMICOLON))
-            get_next_token(parser);
-    }
-    return stmt;
-}
+        std::unique_ptr<Statement> stmt = nullptr;
 
-AST_Statement* parse_return_statement(ParserState* parser)
-{
-    get_next_token(parser); // consume return;
-    AST_Expression* expr = parse_expression(parser, 0);
-    if (expr == NULL)
-    {
-        // TODO: emit_error (...)
-    }
-    if (match_token(parser, TOKEN_SEMICOLON))
-        get_next_token(parser);
-    return create_statement(STMT_RETURN, expr, NULL, NULL, NULL);
-}
-
-AST_Statement* parse_if_statement(ParserState* parser)
-{
-    get_next_token(parser);   // consume 'if'
-    AST_Expression* condition = parse_expression(parser, 0);
-
-    if (condition == NULL)
-    {
-        emit_error(parser, ERR_PARSE_IF_STMT_NO_BODY);
-        return NULL;
-    }
-    AST_Statement *body     = parse_block(parser, false);
-    AST_Statement *else_blk = NULL;
-
-    if (match_token(parser, KEYWORD_ELSE))
-    {
-        get_next_token(parser);
-        else_blk = parse_block(parser, false);
-    }
-    return create_statement(STMT_IF, condition, NULL, body, else_blk);
-}
-
-AST_Statement* parse_block(ParserState* parser, bool require_braces)
-{
-    bool begins_with_left_cbrack = match_token(parser, TOKEN_LEFT_CBRACK);
-
-    if (require_braces && !begins_with_left_cbrack)
-        return NULL;
-
-    if (begins_with_left_cbrack)
-    {
-        get_next_token(parser);
-
-        AST_Statement*  stmts     = NULL;
-        AST_Statement** curr_stmt = &stmts;
-
-        while (!match_token(parser, TOKEN_RIGHT_CBRACK))
+        if (parser->match_token(KEYWORD_IF))
+            stmt = ast::parse_if_statement(parser);
+        else if (parser->match_token(KEYWORD_RETURN))
+            stmt = ast::parse_return_statement(parser);
+        else
         {
-            AST_Statement* stmt = parse_statement(parser);
-            if (stmt == NULL)
+            auto expr = ast::parse_expression(parser);
+            
+            if (!parser->match_token(TOKEN_SEMICOLON))
             {
-                fprintf(stderr, "No statement!\n");
-                return NULL;
+                parser->emit_error("Expected a semicolon");
+                return nullptr;
             }
-                
-            if (*curr_stmt == NULL) *curr_stmt = stmt;
-            curr_stmt = &((*curr_stmt)->next);
+            parser->get_next_token();
+
+            stmt = std::make_unique<ExprStatement>(false, expr.release());
         }
-        if (!match_token(parser, TOKEN_RIGHT_CBRACK))
-        {
-            printf("No matching right bracket!\n");
-            return NULL; // @Leak
-        }
-        get_next_token(parser);
-        return stmts;
+        return stmt;
     }
-    return parse_statement(parser);
-}
 
-AST_Statement* create_statement(stmt_t type, 
-                                AST_Expression  *expr, 
-                                AST_Declaration *decl, 
-                                AST_Statement   *body,
-                                AST_Statement   *else_blk)
-{
-    AST_Statement* stmt = new AST_Statement();
-    stmt->next     = NULL;
-    stmt->type     = type;
-    stmt->expr     = expr;
-    stmt->decl     = decl;
-    stmt->body     = body;
-    stmt->else_blk = else_blk;
-    return stmt;
-}
-
-void free_statement(AST_Statement* stmt)
-{
-    if(stmt != NULL)
+    std::unique_ptr<Statement> parse_block(ParserState* parser, bool require_braces)
     {
-        if(stmt->expr)
-            free_expression(stmt->expr);
-        if(stmt->body)
-            free_statement(stmt->body);
-        if(stmt->else_blk)
-            free_statement(stmt->else_blk);
-        if(stmt->decl)
-            free_declaration(stmt->decl);
-        if(stmt->next)
-            free_statement(stmt->next);
-        delete stmt;
+        bool begins_with_left_cbrack = parser->match_token(TOKEN_LEFT_CBRACK);
+
+        if (require_braces && !begins_with_left_cbrack)
+            return nullptr;
+
+        if (begins_with_left_cbrack)
+        {
+            parser->get_next_token();
+
+            std::unique_ptr<Statement>  stmts     = NULL;
+            std::unique_ptr<Statement>* curr_stmt = &stmts;
+
+            while (!parser->match_token(TOKEN_RIGHT_CBRACK))
+            {
+                std::unique_ptr<Statement> stmt = ast::parse_statement(parser);
+                if (stmt == nullptr)
+                {
+                    parser->emit_error("No statement!\n");
+                    return nullptr;
+                }
+                *curr_stmt = std::move(stmt);
+                 curr_stmt = &(*curr_stmt)->next;
+            }
+            if (!match_token(parser, TOKEN_RIGHT_CBRACK))
+            {
+                parser->emit_error("No matching right bracket!\n");
+                return nullptr;
+            }
+            parser->get_next_token();
+            return stmts;
+        }
+        return ast::parse_statement(parser);
+    }
+    std::unique_ptr<Statement> parse_if_statement(ParserState* parser)
+    {
+        parser->get_next_token(); // consume 'if'
+        std::unique_ptr<Expression> condition = ast::parse_expression(parser);
+        std::unique_ptr<Statement > block     = ast::parse_block(parser, false);
+        std::unique_ptr<Statement > else_blk  = nullptr;
+
+        if(parser->match_token(KEYWORD_ELSE))
+        {
+            parser->get_next_token();
+            else_blk = ast::parse_block(parser, false);
+        }
+        return std::make_unique<IfStatement>(condition.release(), block.release(), else_blk.release());
+    }
+    std::unique_ptr<Statement> parse_return_statement(ParserState* parser)
+    {
+        parser->get_next_token();
+        std::unique_ptr<Expression> ret_expr = ast::parse_expression(parser);
+
+        if (!parser->match_token(TOKEN_SEMICOLON))
+        {
+            parser->emit_error("Expected a semicolon");
+            return nullptr;
+        }
+        parser->get_next_token();
+        return std::make_unique<ExprStatement>(true, ret_expr.release());
     }
 }

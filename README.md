@@ -2,7 +2,7 @@
 ## Sample Source Input
 ```
 // This is a comment
-func fibonacci(x: int) -> int {
+fibonacci(x: int) -> int {
     if x < 2 {
         return x;   // This is another comment
     } else {
@@ -11,4 +11,4 @@ func fibonacci(x: int) -> int {
 }
 ```
 ## Syntax Tree Generated For Graphviz
-<p align="center"><img src="ast_output.png"></p>
+<p align="center"><img src="ast_output.svg"></p>

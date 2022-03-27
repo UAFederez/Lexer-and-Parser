@@ -2,8 +2,8 @@
 #define LANG_PARSER_H
 
 #include "Lexer.h"
-#include <stdbool.h>
 #include <cstddef>
+#include <vector>
 
 /**
     Program       -> Declaration* | \e
@@ -28,20 +28,11 @@ enum lex_error_t {
     ERR_PARSE_INVALID_PARAM   , ERR_PARSE_IF_STMT_NO_BODY  ,
 };
 
-struct ErrorList {
-    lex_error_t type;
-    size_t line_number;
-    size_t pos_in_line;
-    Token* errant_token;
-
-    ErrorList* next;
-};
-
-struct Operator_Info
+struct ErrorMessage
 {
-    TokenType op;
-    size_t precedence;
-    bool   is_left_assoc;
+    std::string msg;
+    std::size_t line_number;
+    std::size_t pos_in_line;
 };
 
 // Note: maybe the better approach is to record the current line number on each
@@ -62,20 +53,18 @@ struct ParserState
     Token* token_stream;
     Token* curr_token;
 
-    parse_status_t  status; 
-    ErrorList *errors;
     size_t curr_line_idx;
     size_t curr_pos_in_line;
+    parse_status_t status; 
 
+    void emit_error(const std::string& message);
     bool match_token(enum TokenType);
     bool get_next_token();
-    void emit_error(lex_error_t type);
+
+    std::vector<ErrorMessage> errors;
 };
 
 bool match_token     (ParserState*, enum TokenType);
 bool get_next_token  (ParserState*);
-
-void emit_error(ParserState* parser, lex_error_t type);
-ErrorList* do_append_error(ErrorList*, lex_error_t, Token *, ParserState*);
 
 #endif

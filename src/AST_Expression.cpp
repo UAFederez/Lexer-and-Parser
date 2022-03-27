@@ -5,167 +5,140 @@
 #include <assert.h>
 #include <stdlib.h>
 
-// TODO: Check robustness against errant expressions
-AST_Expression* parse_atom(ParserState* parser)
-{
-    AST_Expression* atom = NULL;
-
-    if(parser->curr_token == NULL) return NULL;
-
-    if(match_token(parser, TOKEN_IDENTIFIER))
+namespace ast {
+    // Backtracks the current token to the identifier in the event 
+    // that this is not a function call
+    std::unique_ptr<Expression> maybe_parse_func_call(ParserState* parser)
     {
-        atom = maybe_parse_call(parser);
+        Token* ident_token = parser->curr_token;
+        auto ast_ident = std::make_unique<Expression>(Expr_t::IDENTIFIER, ident_token->lexeme);
+        parser->get_next_token();
 
-        // If parsing the function call failed catastrophically
-        if(parser->status != PARSE_SUCCESS) return NULL;
-
-        if(atom == NULL)
+        if(parser->match_token(TOKEN_LEFT_PAREN))
         {
-            atom = create_expr_ident(parser->curr_token->lexeme, NULL, NULL);
-            get_next_token(parser);
-        }
-    }
-    else if(match_token(parser, TOKEN_INT_LITERAL))
-    {
-        atom = create_expr_int(parser->curr_token->int_value);
-        get_next_token(parser);
-    }
-    else if(match_token(parser, TOKEN_FLOAT_LITERAL))
-    {
-        atom = create_expr_float(parser->curr_token->flt_value);
-        get_next_token(parser);
-    }
-    else if(match_token(parser, TOKEN_LEFT_PAREN))
-    {
-        Token* paren_tok = parser->curr_token;
-        get_next_token(parser);
-        atom = parse_expression(parser, 0);
+            parser->get_next_token(); // consume '('
 
-        if(!match_token(parser, TOKEN_RIGHT_PAREN))
+            std::unique_ptr<Expression>  arg_root = nullptr;
+            std::unique_ptr<Expression>* curr_arg = &arg_root;
+            bool expecting_another_argument = false;
+
+            while(!parser->match_token(TOKEN_RIGHT_PAREN))
+            {
+                auto arg = ast::parse_expression(parser);
+                if(!arg && expecting_another_argument)
+                {
+                    parser->emit_error("Invalid argument!\n");
+                    parser->curr_token = ident_token;
+                    return nullptr;
+                }
+                *curr_arg = std::make_unique<Expression>(Expr_t::ARG, arg.release());
+                 curr_arg = &(*curr_arg)->rhs;
+
+                 if(parser->match_token(TOKEN_COMMA))
+                 {
+                     parser->get_next_token();
+                     expecting_another_argument = true;
+                 }
+            }
+            if(!parser->match_token(TOKEN_RIGHT_PAREN))
+            {
+                parser->emit_error("Unmatched parenthesis on function call");
+                parser->curr_token = ident_token;
+                return nullptr;
+            }
+            parser->get_next_token(); // consume ')'
+            return std::make_unique<Expression>(Expr_t::CALL, ast_ident.release(), arg_root.release());
+        } 
+        parser->curr_token = ident_token;
+        return nullptr;
+    }
+    std::unique_ptr<Expression> parse_atom(ParserState* parser)
+    {
+        std::unique_ptr<Expression> atom = nullptr;
+
+        if(parser->match_token(TOKEN_IDENTIFIER))
         {
-            parser->status     = PARSE_ERR_UNMATCHED_PAREN;
-            parser->curr_token = paren_tok;
-            return NULL;
+            atom = ast::maybe_parse_func_call(parser);
+            if(atom == nullptr)
+            {
+                atom = std::make_unique<Expression>(Expr_t::IDENTIFIER, parser->curr_token->lexeme);
+                parser->get_next_token();
+            }
         }
-        get_next_token(parser);
-    }
-    else if(match_token(parser, TOKEN_OP_MINUS))
-    {
-        Token* op_token = parser->curr_token;
-        get_next_token(parser);
-        
-        AST_Expression* expr = parse_atom(parser);
-        if (expr != NULL)
+        else if(parser->match_token(TOKEN_INT_LITERAL))
         {
-            if (expr->type == EXPR_INT)
-                return create_expr_int(-expr->int_value);
-            else if (expr->type == EXPR_FLOAT)
-                return create_expr_float(-expr->flt_value);
-            else
-                return create_expr(EXPR_NEG, expr, NULL);
+            atom = std::make_unique<Expression>((int64_t) parser->curr_token->int_value);
+            parser->get_next_token();
+        }
+        else if(parser->match_token(TOKEN_FLOAT_LITERAL))
+        {
+            atom = std::make_unique<Expression>(parser->curr_token->flt_value);
+            parser->get_next_token();
+        }
+        else if(parser->match_token(TOKEN_LEFT_PAREN))
+        {
+            parser->get_next_token();   // consume '('
+
+            atom = ast::parse_expression(parser);
+            if (!parser->match_token(TOKEN_RIGHT_PAREN))
+            {
+                parser->emit_error("Unmatched parenthesis!\n");
+                return nullptr;
+            }
+            parser->get_next_token(); // consume ')'
+        }
+        else if(parser->match_token(TOKEN_OP_MINUS))
+        {
+            parser->get_next_token(); // consume '-'
+            atom = ast::parse_expression(parser); // TODO: actually do the negation
+            atom = std::make_unique<Expression>(Expr_t::NEGATE, atom.release());
+        }
+        return atom;
+    }
+    std::unique_ptr<Expression> parse_expression(ParserState* parser, int min_prec)
+    {
+        auto result = ast::parse_atom(parser);
+
+        if (!result)
+        {
+            parser->emit_error("Invalid expression!\n");
+            return result;
         }
 
-        parser->curr_token = op_token;
-        return NULL;
-    }
-    return atom;
-}
+        bool is_binary_op = false;
+        Operator_Info curr_op;
 
-AST_Expression* parse_expression(ParserState* parser, size_t min_prec)
-{
-    AST_Expression* result = parse_atom(parser);
-    if (result == NULL) 
-    {
-        if(parser->status == PARSE_SUCCESS) parser->status = PARSE_ERR_MALFORMED_EXPR;
+        while ((is_binary_op = check_if_binary_op(parser, &curr_op)) && curr_op.precedence >= min_prec)
+        {
+            Token* bin_op = parser->curr_token;
+            parser->get_next_token();
+
+            int next_min_prec = curr_op.precedence + (curr_op.is_left_assoc ? 1 : 0);
+            auto rhs = ast::parse_expression(parser, next_min_prec);
+
+            if (!rhs)
+            {
+                if (parser->status == PARSE_SUCCESS) parser->status = PARSE_ERR_MALFORMED_EXPR;
+                parser->curr_token = bin_op;
+                return nullptr;
+            }
+
+            // TODO: get the type of the expression
+            result = std::make_unique<Expression>(curr_op.expr_type, result.release(), rhs.release());
+        }
         return result;
     }
-
-    bool is_binary_op = false;
-    Operator_Info curr_op;
-
-    while ((is_binary_op = check_if_binary_op(parser, &curr_op)) && curr_op.precedence >= min_prec)
-    {
-        Token* bin_op = parser->curr_token;
-        get_next_token(parser);
-
-        size_t next_min_prec = 0;
-        if(curr_op.is_left_assoc)
-            next_min_prec = curr_op.precedence + 1;
-        else
-            next_min_prec = curr_op.precedence;
-
-        expr_t type = EXPR_ADD;
-        switch(curr_op.op)
-        {
-            case TOKEN_OP_PLUS   : type = EXPR_ADD       ; break ;
-            case TOKEN_OP_MINUS  : type = EXPR_SUB       ; break ;
-            case TOKEN_OP_MUL    : type = EXPR_MUL       ; break ;
-            case TOKEN_OP_DIV    : type = EXPR_DIV       ; break ;
-            case TOKEN_OP_EQU    : type = EXPR_ASSIGN    ; break ;
-            case TOKEN_COMP_LESS : type = EXPR_COMP_LESS ; break ;
-            default: break;
-        }
-        AST_Expression* rhs = parse_expression(parser, next_min_prec);
-        if (rhs == NULL)
-        {
-            if (parser->status == PARSE_SUCCESS)
-                parser->status = PARSE_ERR_MALFORMED_EXPR;
-
-            parser->curr_token = bin_op;
-            return NULL;
-        }
-        result = create_expr(type, result, rhs);
-    }
-    // TODO: error checking
-    return result;
-}
-
-AST_Expression* maybe_parse_call(ParserState* parser)
-{
-    Token* id_token = parser->curr_token; // for backtracking
-    get_next_token(parser);
-
-    if (match_token(parser, TOKEN_LEFT_PAREN))
-    {
-        get_next_token(parser);
-
-        AST_Expression*  arg_root = NULL;
-        AST_Expression** curr_arg = &arg_root;
-
-        while(!match_token(parser, TOKEN_RIGHT_PAREN))
-        {
-            AST_Expression* arg = parse_expression(parser, 0);
-            if (arg == NULL)
-            {
-                parser->status     = PARSE_ERR_UNMATCHED_PAREN;
-                parser->curr_token = id_token;
-                return NULL;
-            }
-            if(*curr_arg == NULL)
-                *curr_arg = create_expr(EXPR_ARG, arg, NULL);
-            curr_arg = &((*curr_arg)->rhs);
-
-            // TODO: handle commas on function arguments
-            if(match_token(parser, TOKEN_COMMA))    
-                get_next_token(parser);
-        }
-        get_next_token(parser); // consume ')'
-        AST_Expression* func_id = create_expr_ident(id_token->lexeme, NULL, NULL);
-        return create_expr(EXPR_CALL, func_id, arg_root);
-    } 
-    parser->curr_token = id_token;
-    return NULL;
 }
 
 bool check_if_binary_op(ParserState* parser, Operator_Info* op_info)
 {
     static const Operator_Info info[] = { 
-        { TOKEN_OP_PLUS   , 1 , true } , { TOKEN_OP_MINUS     , 1 , true } ,
-        { TOKEN_OP_DIV    , 2 , true } , { TOKEN_OP_MUL       , 2 , true } ,
-        { TOKEN_COMP_LESS , 3 , true } , { TOKEN_COMP_GREATER , 3 , true } ,
-        { TOKEN_COMP_LEQ  , 3 , true } , { TOKEN_COMP_GEQ     , 3 , true } ,
-        { TOKEN_COMP_NEQ  , 4 , true } , { TOKEN_COMP_EQUAL   , 4 , true } ,
-        { TOKEN_OP_EQU    , 0 , false} ,
+        { TOKEN_OP_PLUS   , 1 , true , Expr_t::ADD      } , { TOKEN_OP_MINUS     , 1 , true, Expr_t::SUB      } ,
+        { TOKEN_OP_DIV    , 2 , true , Expr_t::DIV      } , { TOKEN_OP_MUL       , 2 , true, Expr_t::MUL      } ,
+        { TOKEN_COMP_LESS , 3 , true , Expr_t::COMP_LT  } , { TOKEN_COMP_GREATER , 3 , true, Expr_t::COMP_GT  } ,
+        { TOKEN_COMP_LEQ  , 3 , true , Expr_t::COMP_LEQ } , { TOKEN_COMP_GEQ     , 3 , true, Expr_t::COMP_GEQ } ,
+        { TOKEN_COMP_NEQ  , 4 , true , Expr_t::COMP_NEQ } , { TOKEN_COMP_EQUAL   , 4 , true, Expr_t::COMP_EQU } ,
+        { TOKEN_OP_EQU    , 0 , false, Expr_t::ASSIGN   } ,
     };
     
     if (parser->curr_token != NULL)
@@ -180,45 +153,4 @@ bool check_if_binary_op(ParserState* parser, Operator_Info* op_info)
         }
     }
     return false;
-}
-
-AST_Expression* create_expr(expr_t type, AST_Expression* lhs, AST_Expression* rhs)
-{
-    AST_Expression* expr = new AST_Expression();
-    expr->type = type;
-    expr->lhs  = lhs;
-    expr->rhs  = rhs;
-    return expr;
-}
-
-AST_Expression* create_expr_ident(const std::string& ident, AST_Expression* lhs, AST_Expression* rhs)
-{
-    AST_Expression* expr = create_expr(EXPR_IDENT, lhs, rhs);
-    expr->ident_name = ident;
-    return expr;
-}
-
-AST_Expression* create_expr_int(long int_val)
-{
-    AST_Expression* expr = create_expr(EXPR_INT, NULL, NULL);
-    expr->int_value = int_val;
-    return expr;
-}
-
-AST_Expression* create_expr_float(double flt_val)
-{
-    AST_Expression* expr = create_expr(EXPR_FLOAT, NULL, NULL);
-    expr->flt_value = flt_val;
-    return expr;
-}
-
-void free_expression(AST_Expression* expr)
-{
-    if(expr != NULL)
-    {
-        if(expr->lhs) free_expression(expr->lhs);
-        if(expr->rhs) free_expression(expr->rhs);
-
-        delete expr;
-    }
 }
