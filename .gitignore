@@ -6,7 +6,6 @@
 *.exp
 *.lib
 *.gv
-*.svg
 
 *.lang
 .vscode/
