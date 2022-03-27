@@ -1,3 +1,4 @@
+*.out
 *.exe
 *.ilk
 *.pdb
@@ -5,8 +6,16 @@
 *.exp
 *.lib
 *.gv
+*.svg
 
 *.lang
 .vscode/
 TODO.md
+.vs/
+CppProperties.json
+Debug/
+*.sln
+*.vcxproj
+*.vcxproj.*
+*.vcxproj.user
 Makefile
