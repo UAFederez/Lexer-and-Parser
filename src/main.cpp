@@ -34,7 +34,7 @@ void print_tokens(Token* token_stream)
 {
     for( Token* tok = token_stream ; tok != NULL ; tok = tok->next )
     {
-        printf("(line: %-2llu) ", tok->line_number);
+        printf("(line: %-2zu) ", tok->line_number);
         switch(tok->type)
         {
             case TOKEN_IDENTIFIER    : printf("[Ident ] %s\n",  tok->lexeme.c_str())     ; break ;
@@ -82,7 +82,7 @@ int main()
 
     // TODO: debug this status result code
     // printf("Lexer finished with status: %llu\n", lex_result);
-    //print_tokens(lexer_state.tokens);
+    // print_tokens(lexer_state.tokens);
 
     ParserState parser;
     parser.status       = PARSE_SUCCESS;
@@ -93,7 +93,7 @@ int main()
     printf("done parsing!\n");
     if(!parser.errors.empty()) 
     {
-        printf("Number of errors: %lld\n", parser.errors.size());
+        printf("Number of errors: %zu\n", parser.errors.size());
         for(const ErrorMessage& e : parser.errors) 
         {
             // TODO: These line numbers and line positions are incorrect
@@ -101,7 +101,7 @@ int main()
             // implement in the future a way to print out the actual line
             // with a marker that represents where the error is based on the
             // position of the start of the errant token 
-            std::printf("[Error] on line %lld at position %lld:\n\t%s\n", 
+            std::printf("[Error] on line %zu at position %zu:\n\t%s\n", 
                         e.line_number, e.pos_in_line, e.msg.c_str());
         }
     } else
@@ -116,7 +116,7 @@ int main()
 
         std::ofstream output_file("ast_output.gv");
         output_file << doc.oss.str() << '\n';
-        std::cout << doc.oss.str() << '\n';
+        std::printf("%s\n", doc.oss.str().c_str());
     }
     return 0;
 }

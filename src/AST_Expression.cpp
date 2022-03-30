@@ -93,6 +93,11 @@ namespace ast {
             atom = ast::parse_expression(parser); // TODO: actually do the negation
             atom = std::make_unique<Expression>(Expr_t::NEGATE, atom.release());
         }
+        else if (parser->match_token(TOKEN_STR_LITERAL))
+        {
+            atom = std::make_unique<Expression>(Expr_t::STRING_LITERAL, parser->curr_token->lexeme);
+            parser->get_next_token();
+        }
         return atom;
     }
     std::unique_ptr<Expression> parse_expression(ParserState* parser, int min_prec)
@@ -127,6 +132,59 @@ namespace ast {
             result = std::make_unique<Expression>(curr_op.expr_type, result.release(), rhs.release());
         }
         return result;
+    }
+
+    int Expression::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* EXPR_FMT   = "    expr_%d[label=\"{%s|{<f1>lhs|<f2>rhs}}\"];\n";
+        static const char* EXPR_FMT_S = "    expr_%d[label=\"{\\\"%s\\\"|{<f1>lhs|<f2>rhs}}\"];\n";
+        static const char* EXPR_FMT_I = "    expr_%d[label=\"{%ld|{<f1>lhs|<f2>rhs}}\"];\n";
+        static const char* EXPR_FMT_F = "    expr_%d[label=\"{%.2f|{<f1>lhs|<f2>rhs}}\"];\n";
+        static const std::unordered_map<Expr_t, std::string> op_lexemes = {
+            { Expr_t::ADD   , "+" }, { Expr_t::SUB, "-" }, { Expr_t::MUL, "*" }, { Expr_t::DIV, "/" },
+            { Expr_t::ASSIGN, "=" }
+        };
+
+        char buffer[1024] = {};
+
+        int expr_id = doc.next_id();
+        switch(expr_type)
+        {
+        case Expr_t::IDENTIFIER:
+            std::snprintf(buffer, 1024, EXPR_FMT, expr_id, str_value.c_str()); break;
+        case Expr_t::CALL:
+            std::snprintf(buffer, 1024, EXPR_FMT, expr_id, "\\<call\\>"); break;
+        case Expr_t::ARG:
+            std::snprintf(buffer, 1024, EXPR_FMT, expr_id, "\\<args\\>"); break;
+        case Expr_t::INT_LITERAL:
+            std::snprintf(buffer, 1024, EXPR_FMT_I, expr_id, int_value); 
+            break;
+        case Expr_t::FLOAT_LITERAL:
+            std::snprintf(buffer, 1024, EXPR_FMT_F, expr_id, flt_value); 
+            break;
+        case Expr_t::STRING_LITERAL:
+            std::snprintf(buffer, 1024, EXPR_FMT_S, expr_id, str_value.c_str());
+            break;
+        default: 
+            if (op_lexemes.find(expr_type) != op_lexemes.end())
+                std::snprintf(buffer, 1024, EXPR_FMT, expr_id, op_lexemes.at(expr_type).c_str()); 
+            else
+                std::snprintf(buffer, 1024, EXPR_FMT, expr_id, "op"); 
+            break;
+        }
+        doc.oss << buffer;
+
+        if(lhs)
+        {
+            int lhs_id = lhs->output_graphviz(doc);
+            doc.oss << "    expr_" << expr_id << ":<f1> -> expr_" << lhs_id << ";\n";
+        }
+        if(rhs)
+        {
+            int rhs_id = rhs->output_graphviz(doc);
+            doc.oss << "    expr_" << expr_id << ":<f2> -> expr_" << rhs_id << ";\n";
+        }
+        return expr_id;
     }
 }
 

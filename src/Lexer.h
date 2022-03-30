@@ -8,11 +8,13 @@
 #include <array>
 #include <algorithm>
 
-enum LexerError {
+enum LexerError 
+{
     LEX_SUCCESS , LEX_ERR_UNKNOWN_TOKEN , LEX_ERR_INVALID_REAL , LEX_ERR_INVALID_INT ,
 };
 
-enum TokenType { 
+enum TokenType 
+{ 
     TOKEN_IDENTIFIER , TOKEN_INT_LITERAL  , TOKEN_FLOAT_LITERAL , TOKEN_STR_LITERAL  ,
 
     TOKEN_OP_PLUS    , TOKEN_OP_MINUS     , TOKEN_OP_MUL        , TOKEN_OP_DIV       ,
@@ -44,7 +46,7 @@ struct Token
 
 struct LexerState 
 {
-    std::string  input_string;
+    std::string input_string;
     size_t input_len;
     size_t num_tokens;
     Token* tokens;
@@ -59,9 +61,10 @@ struct LexerState
     std::string lexeme_buffer;
 
     size_t tokenize_string();
-    size_t maybe_parse_identifier();
-    size_t maybe_parse_num_literal();
-    size_t maybe_parse_operators();
+    bool maybe_parse_identifier();
+    bool maybe_parse_num_literal();
+    bool maybe_parse_str_literal();
+    bool maybe_parse_operators();
 
     ~LexerState() 
     {

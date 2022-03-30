@@ -11,6 +11,8 @@
 #include "AST_Expression.h"
 #include "AST_Node.h"
 
+enum class Stmt_t { NONE, IF, FOR, DECL, RETURN, EXPR };
+
 namespace ast 
 {
     class Statement : public AST_Node

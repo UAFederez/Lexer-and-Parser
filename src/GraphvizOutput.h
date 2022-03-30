@@ -4,5 +4,4 @@
 #include "AST_Declaration.h"
 #include "AST_Statement.h"
 #include <sstream>
-
 #endif

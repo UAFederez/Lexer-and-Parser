@@ -8,43 +8,6 @@
 
 namespace ast 
 {
-    int VariableDecl::output_graphviz(GraphvizDocument& doc) const
-    {
-        static const char* fmt = "    decl_%d[label=\"{%s|{<f1>type|<f2>expr}}\"];\n";
-        char buffer[512];
-
-        int decl_id = doc.next_id();
-        std::snprintf(buffer, 512, fmt, decl_id, name.c_str());
-        doc.oss << buffer;
-
-        if (expr)
-        {
-            int expr_id = expr->output_graphviz(doc);
-            doc.oss << "    decl_" << decl_id << ":<f2> -> expr_" << expr_id << ";\n";
-        }
-        return decl_id;
-    }
-
-    int VarDeclStatement::output_graphviz(GraphvizDocument& doc) const
-    {
-        static const char* fmt = "    stmt_%d[label=\"{VarDeclStatement|{<f1>decl|<f2>next}}\"]\n";
-
-        int stmt_id = doc.next_id();
-        int decl_id = decl->output_graphviz(doc);
-        
-        char buffer[512];
-        std::snprintf(buffer, 512, fmt, stmt_id);
-        doc.oss << buffer;
-
-        doc.oss << "    stmt_" << stmt_id << ":<f1> -> decl_" << decl_id << ";\n";
-        if(next)
-        {
-            int next_id = next->output_graphviz(doc);
-            doc.oss << "    stmt_" << stmt_id << ":<f2> -> stmt_" << next_id << ";\n";
-        }
-        return stmt_id;
-    }
-
     std::unique_ptr<Declaration> parse_declaration(ParserState* parser)
     {
         auto decl = maybe_parse_function_decl(parser);
@@ -221,6 +184,45 @@ namespace ast
         }
         return param_id; 
     }
+
+
+    int VariableDecl::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* fmt = "    decl_%d[label=\"{%s|{<f1>type|<f2>expr}}\"];\n";
+        char buffer[512];
+
+        int decl_id = doc.next_id();
+        std::snprintf(buffer, 512, fmt, decl_id, name.c_str());
+        doc.oss << buffer;
+
+        if (expr)
+        {
+            int expr_id = expr->output_graphviz(doc);
+            doc.oss << "    decl_" << decl_id << ":<f2> -> expr_" << expr_id << ";\n";
+        }
+        return decl_id;
+    }
+
+    int VarDeclStatement::output_graphviz(GraphvizDocument& doc) const
+    {
+        static const char* fmt = "    stmt_%d[label=\"{VarDeclStatement|{<f1>decl|<f2>next}}\"]\n";
+
+        int stmt_id = doc.next_id();
+        int decl_id = decl->output_graphviz(doc);
+
+        char buffer[512];
+        std::snprintf(buffer, 512, fmt, stmt_id);
+        doc.oss << buffer;
+
+        doc.oss << "    stmt_" << stmt_id << ":<f1> -> decl_" << decl_id << ";\n";
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    stmt_" << stmt_id << ":<f2> -> stmt_" << next_id << ";\n";
+        }
+        return stmt_id;
+    }
+
 
     int FunctionDecl::output_graphviz(GraphvizDocument& doc) const
     {

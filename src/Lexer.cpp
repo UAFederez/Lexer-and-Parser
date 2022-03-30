@@ -54,6 +54,8 @@ size_t LexerState::tokenize_string()
     curr_line_number   = 1;
     curr_pos_in_line   = 1;
 
+    // TODO: Try to perform this within the main loop as opposed to a preprocessing function
+    // to avoid having to traverse the entire contents of the file twice
     preprocess_string(input_string, input_len);
 
     size_t status = LEX_SUCCESS;
@@ -77,6 +79,7 @@ size_t LexerState::tokenize_string()
 
         if(isalpha(curr_char) && (read_valid_token &= maybe_parse_identifier()))  continue;
         if(isdigit(curr_char) && (read_valid_token &= maybe_parse_num_literal())) continue;
+        if(curr_char == '\"'  && (read_valid_token &= maybe_parse_str_literal())) continue;
         
         read_valid_token &= maybe_parse_operators();
         if (!read_valid_token)
@@ -96,7 +99,7 @@ size_t LexerState::tokenize_string()
     return status;
 }
 
-size_t LexerState::maybe_parse_num_literal()
+bool LexerState::maybe_parse_num_literal()
 {
     size_t end_idx  = curr_ch_idx + 1;
     int num_periods = 0;
@@ -110,7 +113,7 @@ size_t LexerState::maybe_parse_num_literal()
     }
 
     if(num_periods > 1)
-        return LEX_ERR_INVALID_REAL;
+        return false;
 
     size_t num_len      = end_idx - curr_ch_idx;
     enum TokenType type = (num_periods == 0 ? TOKEN_INT_LITERAL : TOKEN_FLOAT_LITERAL);
@@ -120,11 +123,24 @@ size_t LexerState::maybe_parse_num_literal()
     insert_token(lexeme_buffer, type);
     curr_ch_idx = end_idx;
 
-    return 1;
+    return true;
+
 }
 
+bool LexerState::maybe_parse_str_literal()
+{
+    lexeme_buffer = "";
+    
+    curr_ch_idx++; // consume left (")
+    while(curr_ch_idx < input_len - 1 && input_string[curr_ch_idx] != '\"')
+        lexeme_buffer += input_string[curr_ch_idx++];
 
-size_t LexerState::maybe_parse_identifier()
+    curr_ch_idx++; // consume right (")
+    insert_token(lexeme_buffer, TOKEN_STR_LITERAL);
+    return true;
+}
+
+bool LexerState::maybe_parse_identifier()
 {
     static const std::array<std::string, 4> KEYWORDS = {
         "if", "else", "func", "return"
@@ -147,11 +163,11 @@ size_t LexerState::maybe_parse_identifier()
     curr_ch_idx += ident_len;
 
     num_tokens++;
-    return 1;
+    return true;
 }
 
 
-size_t LexerState::maybe_parse_operators()
+bool LexerState::maybe_parse_operators()
 {
     // Ordered in the same way as the corresponding TokenTypes
     static const char  SINGLE_CH_TOKENS[] = { 

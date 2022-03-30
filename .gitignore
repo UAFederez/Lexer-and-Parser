@@ -17,4 +17,5 @@ Debug/
 *.vcxproj
 *.vcxproj.*
 *.vcxproj.user
-Makefile
+build.bat
+build/
