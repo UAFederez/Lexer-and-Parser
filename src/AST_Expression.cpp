@@ -141,8 +141,8 @@ namespace ast {
         static const char* EXPR_FMT_I = "    expr_%d[label=\"{%ld|{<f1>lhs|<f2>rhs}}\"];\n";
         static const char* EXPR_FMT_F = "    expr_%d[label=\"{%.2f|{<f1>lhs|<f2>rhs}}\"];\n";
         static const std::unordered_map<Expr_t, std::string> op_lexemes = {
-            { Expr_t::ADD   , "+" }, { Expr_t::SUB, "-" }, { Expr_t::MUL, "*" }, { Expr_t::DIV, "/" },
-            { Expr_t::ASSIGN, "=" }
+            { Expr_t::ADD   , "+" }, { Expr_t::SUB   ,  "-" }, { Expr_t::MUL, "*" }, { Expr_t::DIV, "/" },
+            { Expr_t::ASSIGN, "=" }, { Expr_t::COMP_LT, "\\<" }
         };
 
         char buffer[1024] = {};

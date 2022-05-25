@@ -4,6 +4,7 @@
 
 #include "Parser.h"
 #include <cstddef>
+#include <unordered_map>
 #include "AST_Node.h"
 
 enum class Expr_t { 
@@ -12,7 +13,27 @@ enum class Expr_t {
     COMP_GEQ       , COMP_EQU , IDENTIFIER , INT_LITERAL , FLOAT_LITERAL ,
     STRING_LITERAL , NEGATE   , ARG        , CALL        ,
 };
-enum class Type_t { INT, FLOAT, FUNCTION, VOID, POINTER };
+class Type_t { 
+public:
+    enum Value
+    {
+        INT, FLOAT, FUNCTION, VOID, POINTER 
+    };
+
+    Type_t(const Value& v):
+        value(v) { }
+
+    std::string to_string() const {
+        static const std::unordered_map<Value, std::string> str {
+            { INT , "Integer"  }, { FLOAT  , "Float"   }, { FUNCTION, "Function" },
+            { VOID, "Void"     }, { POINTER, "Pointer" },
+        };
+        return str.at(value);
+    }
+    bool operator==(const Value& v) const { return value == v; }
+private:
+    Value value;
+};
 
 struct Operator_Info
 {

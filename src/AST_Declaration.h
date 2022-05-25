@@ -25,12 +25,16 @@ namespace ast
     {
         ParameterNode(Type_t type, const std::string& name):
             type(type), name(name) { }
-        Type_t      type;
-        std::string name;
-        std::unique_ptr<ParameterNode> next = nullptr;
 
         int output_graphviz(GraphvizDocument& doc) const override;
         ~ParameterNode() { }
+
+        std::unique_ptr<ParameterNode>* get_next() { return &next; } 
+
+        private:
+            Type_t      type;
+            std::string name;
+            std::unique_ptr<ParameterNode> next = nullptr;
     };
 
     class Declaration : public AST_Node
@@ -39,6 +43,8 @@ namespace ast
             Declaration() = default;
             Declaration(Type_t type):
                 basic_type(type) { }
+
+            Type_t get_type() const { return basic_type; }
             virtual int output_graphviz(GraphvizDocument& doc) const = 0;
             virtual ~Declaration() = default;
 

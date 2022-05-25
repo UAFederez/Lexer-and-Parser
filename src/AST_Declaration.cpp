@@ -75,7 +75,7 @@ namespace ast
                 return nullptr;
             }
             *curr_param = std::make_unique<ParameterNode>(ident_type->first, ident_type->second);
-             curr_param = &(*curr_param)->next;
+             curr_param = (*curr_param)->get_next();
 
             if(parser->match_token(TOKEN_COMMA))
             {
@@ -163,8 +163,9 @@ namespace ast
     }
     int ParameterNode::output_graphviz(GraphvizDocument& doc) const 
     {
-        const char* fmt      = "    param_%d[label=\"{ParameterNode|{<f1>name|<f2>type|<f3>next}}\"];\n";
-        const char* fmt_name = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+        static const char* fmt       = "    param_%d[label=\"{ParameterNode|{<f1>name|<f2>type|<f3>next}}\"];\n";
+        static const char* fmt_name  = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+        static const char* fmt_value = "    str_%d[label=\"{%s}\"];\n";
 
         char buffer[1024] = {};
 
@@ -176,7 +177,12 @@ namespace ast
         std::snprintf(buffer, 1024, fmt_name, name_id, name.c_str());
         doc.oss << buffer;
 
+        int type_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt_value, type_id, type.to_string().c_str());
+        doc.oss << buffer;
+
         doc.oss << "    param_" << param_id << ":<f1> -> str_" << name_id << ";\n";
+        doc.oss << "    param_" << param_id << ":<f2> -> str_" << type_id << ";\n";
         if(next)
         {
             int next_id = next->output_graphviz(doc);
@@ -188,12 +194,19 @@ namespace ast
 
     int VariableDecl::output_graphviz(GraphvizDocument& doc) const
     {
-        static const char* fmt = "    decl_%d[label=\"{%s|{<f1>type|<f2>expr}}\"];\n";
+        static const char* fmt       = "    decl_%d[label=\"{%s|{<f1>type|<f2>expr}}\"];\n";
+        static const char* fmt_value = "    str_%d[label=\"{%s}\"];\n";
         char buffer[512];
 
         int decl_id = doc.next_id();
         std::snprintf(buffer, 512, fmt, decl_id, name.c_str());
         doc.oss << buffer;
+
+        int type_id = doc.next_id();
+        std::snprintf(buffer, 512, fmt_value, type_id, get_type().to_string());
+        doc.oss << buffer;
+
+        doc.oss << "    decl_" << decl_id << ":<f1> -> str_" << type_id << ";\n";
 
         if (expr)
         {
@@ -226,8 +239,9 @@ namespace ast
 
     int FunctionDecl::output_graphviz(GraphvizDocument& doc) const
     {
-        static const char* fmt      = "    decl_%d[label=\"{FunctionDecl | {<f1>name |<f2> params|<f3> ret_type|<f4> body|<f5>next}}\"];\n";
-        static const char* fmt_name = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+        static const char* fmt        = "    decl_%d[label=\"{FunctionDecl | {<f1>name |<f2> params|<f3> ret_type|<f4> body|<f5>next}}\"];\n";
+        static const char* fmt_name   = "    str_%d[label=\"{\\\"%s\\\"}\"];\n";
+        static const char* fmt_value  = "    str_%d[label=\"{%s}\"];\n";
 
         char buffer[1024] = {};
 
@@ -239,7 +253,12 @@ namespace ast
         std::snprintf(buffer, 1024, fmt_name, name_id, name.c_str());
         doc.oss << buffer;
 
-        doc.oss << "    decl_" << decl_id << ":<f1> -> str_" << name_id << ";\n";
+        int ret_type_id = doc.next_id();
+        std::snprintf(buffer, 1024, fmt_value, ret_type_id, return_type.to_string().c_str());
+        doc.oss << buffer;
+
+        doc.oss << "    decl_" << decl_id << ":<f1> -> str_" << name_id     << ";\n";
+        doc.oss << "    decl_" << decl_id << ":<f3> -> str_" << ret_type_id << ";\n";
 
         if(params)
         {
