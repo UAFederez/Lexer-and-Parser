@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LANG_LEXER_H
 #define LANG_LEXER_H
 

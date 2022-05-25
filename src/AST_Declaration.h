@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LANG_AST_DECLARATION_H
 #define LANG_AST_DECLARATION_H
 

@@ -13,5 +13,8 @@ fibonacci(x: int) {
     }
 }
 ```
-## Syntax Tree Generated For Graphviz
+## Abstract Syntax Tree Visualized Using Graphviz
 <p align="center"><img src="ast_output.svg"></p>
+
+## BNF Description of the Grammar
+<p align="center"><img src="bnf.jpg"></p>

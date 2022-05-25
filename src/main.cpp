@@ -10,10 +10,9 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "AST_Expression.h"
-#include "AST_Declaration.h"
 #include "AST_Statement.h"
+#include "AST_Declaration.h"
 #include "GraphvizOutput.h"
-#include "AST_Node.h"
 
 std::string load_program_source(const char* path)
 {
@@ -32,7 +31,7 @@ std::string load_program_source(const char* path)
 
 void print_tokens(Token* token_stream)
 {
-    for( Token* tok = token_stream ; tok != NULL ; tok = tok->next )
+    for(Token* tok = token_stream ; tok != NULL ; tok = tok->next)
     {
         printf("(line: %-2zu) ", tok->line_number);
         switch(tok->type)
@@ -44,7 +43,7 @@ void print_tokens(Token* token_stream)
             case TOKEN_RIGHT_PAREN   : printf("[RParen] %s\n",  tok->lexeme.c_str())     ; break ;
             case TOKEN_EOF           : printf("[EOF   ] %s\n",  tok->lexeme.c_str())     ; break ;
 
-            case TOKEN_COMP_LESS: case TOKEN_COMP_GREATER:
+	        case TOKEN_COMP_LESS: case TOKEN_COMP_GREATER:
                 printf("[Comp  ] %s\n", tok->lexeme.c_str());
             break;
             case KEYWORD_IF : case KEYWORD_FUNC : case KEYWORD_RETURN : case KEYWORD_ELSE :
@@ -80,10 +79,6 @@ int main()
 
     size_t lex_result = lexer_state.tokenize_string();
 
-    // TODO: debug this status result code
-    // printf("Lexer finished with status: %llu\n", lex_result);
-    // print_tokens(lexer_state.tokens);
-
     ParserState parser;
     parser.status       = PARSE_SUCCESS;
     parser.token_stream = lexer_state.tokens;
@@ -93,7 +88,7 @@ int main()
     printf("done parsing!\n");
     if(!parser.errors.empty()) 
     {
-        printf("Number of errors: %zu\n", parser.errors.size());
+        printf("Number of errors: %llu\n", parser.errors.size());
         for(const ErrorMessage& e : parser.errors) 
         {
             // TODO: These line numbers and line positions are incorrect

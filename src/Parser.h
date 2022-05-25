@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LANG_PARSER_H
 #define LANG_PARSER_H
 

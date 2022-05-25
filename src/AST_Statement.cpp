@@ -33,15 +33,6 @@ namespace ast
         return stmt;
     }
 
-    std::unique_ptr<Statement> parse_block_if_bracketed(ParserState* parser)
-    {
-        bool begins_with_left_cbrack = parser->match_token(TOKEN_LEFT_CBRACK);
-        if (!begins_with_left_cbrack)
-            return nullptr;
-        parser->get_next_token(); // consume '}'
-
-    }
-
     std::unique_ptr<Statement> parse_block(ParserState* parser, bool require_braces)
     {
         bool begins_with_left_cbrack = parser->match_token(TOKEN_LEFT_CBRACK);
