@@ -1,4 +1,4 @@
-#include "AST_Expression.h"
+#include "Expression.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +32,7 @@ namespace ast {
                     return nullptr;
                 }
                 *curr_arg = std::make_unique<Expression>(Expr_t::ARG, arg.release());
-                 curr_arg = &(*curr_arg)->rhs;
+                 curr_arg = (*curr_arg)->rhs();
 
                  if(parser->match_token(TOKEN_COMMA))
                  {
@@ -174,14 +174,15 @@ namespace ast {
         }
         doc.oss << buffer;
 
-        if(lhs)
+        if(lhs_)
         {
-            int lhs_id = lhs->output_graphviz(doc);
+            int lhs_id = lhs_->output_graphviz(doc);
             doc.oss << "    expr_" << expr_id << ":<f1> -> expr_" << lhs_id << ";\n";
         }
-        if(rhs)
+
+        if(rhs_)
         {
-            int rhs_id = rhs->output_graphviz(doc);
+            int rhs_id = rhs_->output_graphviz(doc);
             doc.oss << "    expr_" << expr_id << ":<f2> -> expr_" << rhs_id << ";\n";
         }
         return expr_id;

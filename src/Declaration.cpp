@@ -1,5 +1,5 @@
-#include "AST_Declaration.h"
-#include "AST_Statement.h"
+#include "Declaration.h"
+#include "Statement.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -270,6 +270,12 @@ namespace ast
         {
             int body_id = body->output_graphviz(doc);
             doc.oss << "    decl_" << decl_id << ":<f4> -> stmt_" << body_id << ";\n";
+        }
+
+        if(next)
+        {
+            int next_id = next->output_graphviz(doc);
+            doc.oss << "    decl_" << decl_id << ":<f5> -> decl_" << next_id << ";\n";
         }
         return decl_id;
     }

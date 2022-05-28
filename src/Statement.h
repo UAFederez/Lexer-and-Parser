@@ -8,8 +8,8 @@
 #include <utility>
 
 #include "Parser.h"
-#include "AST_Expression.h"
-#include "AST_Node.h"
+#include "Expression.h"
+#include "Node.h"
 
 enum class Stmt_t { NONE, IF, FOR, DECL, RETURN, EXPR };
 

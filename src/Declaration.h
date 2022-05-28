@@ -7,9 +7,9 @@
 #include <optional>
 
 #include "Parser.h"
-#include "AST_Expression.h"
-#include "AST_Statement.h"
-#include "AST_Node.h"
+#include "Expression.h"
+#include "Statement.h"
+#include "Node.h"
 
 /**
     Declaration -> IDENTIFIER : TYPEIDENTIFIER { = Expression }; ?
@@ -48,6 +48,10 @@ namespace ast
             virtual int output_graphviz(GraphvizDocument& doc) const = 0;
             virtual ~Declaration() = default;
 
+            void set_next(std::unique_ptr<ast::Declaration>& n)
+            {
+                next = std::move(n);
+            }
         protected:
             Type_t basic_type;
             std::unique_ptr<Declaration > next = nullptr;
@@ -62,6 +66,7 @@ namespace ast
                 Declaration(Type_t::FUNCTION), name(name), params(params), return_type(ret_type), body(body) { }
 
             int output_graphviz(GraphvizDocument& doc) const override;
+            
         private:
             std::string name = {};
             std::unique_ptr<ParameterNode> params = nullptr;

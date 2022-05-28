@@ -5,7 +5,7 @@
 #include "Parser.h"
 #include <cstddef>
 #include <unordered_map>
-#include "AST_Node.h"
+#include "Node.h"
 
 enum class Expr_t { 
     NONE           , ADD      , MUL        , DIV         , SUB           ,
@@ -53,10 +53,12 @@ namespace ast {
         double      flt_value = 0.0;
         std::string str_value = {};
 
+        std::unique_ptr<Expression> lhs_ = nullptr;
+        std::unique_ptr<Expression> rhs_ = nullptr;
     public:
         Expression() = default;
         Expression(Expr_t expr_type, Expression* lhs = nullptr, Expression* rhs = nullptr):
-            expr_type(expr_type), lhs(lhs), rhs(rhs) { }
+            expr_type(expr_type), lhs_(lhs), rhs_(rhs) { }
 
         Expression(int64_t int_value ) : 
             expr_type(Expr_t::INT_LITERAL), int_value(int_value) {}
@@ -74,9 +76,9 @@ namespace ast {
 
         int output_graphviz(GraphvizDocument& doc) const override;
         ~Expression() override { }
-
-        std::unique_ptr<Expression> lhs = nullptr;
-        std::unique_ptr<Expression> rhs = nullptr;
+        
+        std::unique_ptr<ast::Expression>* rhs() { return &rhs_; }
+        std::unique_ptr<ast::Expression>* lhs() { return &lhs_; }
     };
 
 

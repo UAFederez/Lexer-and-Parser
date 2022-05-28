@@ -6,23 +6,6 @@
 #include <cstddef>
 #include <vector>
 
-/**
-    Program       -> Declaration* | \e
-    Declaration   -> IDENTIFIER : TYPEIDENTIFIER {= Expression}?
-                     | func Identifier ({ IDENTIFIER : TYPEIDENTIFIER ,?}*) { -> TYPEIDENTIFIER }?
-                       \{ {Statement}* \}
-    
-    Statement     -> Expression | Declaration_S | If_Statement | For_loop | Return
-    
-    Expression    -> Expression BinaryOp Expression | FunctionCall | IDENTIFIER | Literal
-    FunctionCall  -> Identifier ( { IDENTIFIER : TYPEIDENTIFIER ,?}* )
-    Literal       -> LITERAL_FLOAT | LITERAL_INT
-
-    Declaration_S -> Identifier : TypeIdentifier {= Expression}? ;
-    Return        -> return Expression ;
-    If_Statement  -> if Expression \{? Statement+ \}? { else \{? Statement \}? }?
-**/
-
 enum lex_error_t {
     ERR_NONE                  , ERR_LEX_UNRECOGNIZED_TOKEN , ERR_PARSE_MALFORMED_EXPR ,
     ERR_PARSE_UNMATCHED_PAREN , ERR_PARSE_INVALID_TYPE     , ERR_PARSE_INVALID_DECL   ,

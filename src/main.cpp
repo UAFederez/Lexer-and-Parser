@@ -9,10 +9,11 @@
 
 #include "Lexer.h"
 #include "Parser.h"
-#include "AST_Expression.h"
-#include "AST_Statement.h"
-#include "AST_Declaration.h"
+#include "Expression.h"
+#include "Statement.h"
+#include "Declaration.h"
 #include "GraphvizOutput.h"
+#include "Interpreter.h"
 
 std::string load_program_source(const char* path)
 {
@@ -84,7 +85,18 @@ int main()
     parser.token_stream = lexer_state.tokens;
     parser.curr_token   = lexer_state.tokens;
     
-    auto stmt = ast::parse_declaration(&parser);
+    std::unique_ptr<ast::Declaration> stmt = nullptr;
+    while(true)
+    {
+        auto decl = ast::parse_declaration(&parser);
+        if(decl == nullptr)
+            break;
+
+        if(stmt == nullptr)
+            stmt = std::move(decl);
+        else
+            stmt->set_next(decl);
+    }
     printf("done parsing!\n");
     if(!parser.errors.empty()) 
     {
@@ -99,7 +111,7 @@ int main()
             std::printf("[Error] on line %zu at position %zu:\n\t%s\n", 
                         e.line_number, e.pos_in_line, e.msg.c_str());
         }
-    } else
+    }
     {
         GraphvizDocument doc;
         doc.curr_node_id = 0;
