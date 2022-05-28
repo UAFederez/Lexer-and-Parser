@@ -13,6 +13,10 @@ fibonacci(x: int) -> int {
 
     return x;
 }
+
+main() {
+    print("Fibonacci of 13 is: ", fibonacci(13));
+}
 ```
 ## Abstract Syntax Tree Visualized Using Graphviz
 <p align="center"><img src="ast_output.svg"></p>
